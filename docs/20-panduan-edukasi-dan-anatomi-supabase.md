@@ -36,6 +36,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [13.1 Kelompok 1: DATABASE MANAGEMENT (ERD, Functions RPC, Triggers, Enums, Extensions, Indexes, Publications)](#131-kelompok-1-database-management)
     - [13.2 Kelompok 2: ACCESS CONTROL (Policies RLS, Database Roles)](#132-kelompok-2-access-control)
     - [13.3 Kelompok 3: CONFIGURATION & PLATFORM (Settings, Replication, Backups, Migrations)](#133-kelompok-3-configuration--platform)
+14. [Panduan Lengkap Ekstensi PostgreSQL (Database Extensions Masterclass)](#-14-panduan-lengkap-ekstensi-postgresql-database-extensions-masterclass)
+    - [14.1 Mengapa Supabase Menggunakan Schema extensions?](#141-mengapa-supabase-menggunakan-schema-extensions)
+    - [14.2 4 Ekstensi Utama yang Wajib Aktif untuk MariFlow](#142-4-ekstensi-utama-yang-wajib-aktif-enabled-by-default-untuk-mariflow)
+    - [14.3 Ekstensi Pilihan SaaS Paling Berguna untuk Fitur Lanjutan](#143-ekstensi-pilihan-saas-paling-berguna-untuk-pengembangan-fitur-lanjutan)
+    - [14.4 Cara Mengaktifkan Ekstensi via SQL Script](#144-cara-mengaktifkan-ekstensi-via-sql-script)
 
 ---
 
@@ -650,7 +655,90 @@ Menu **Database** (icon 🗄️ pada sidebar) adalah pusat kendali tingkat renda
 
 ---
 
+## 🔌 14. Panduan Lengkap Ekstensi PostgreSQL (*Database Extensions Masterclass*)
+
+Menu **Database ➔ Extensions** (icon 🔌) memungkinkan Anda mengaktifkan kemampuan tingkat lanjut (*superpowers*) pada database PostgreSQL hanya dengan satu kali klik toggle atau perintah SQL sederhana.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🔌 Database Extensions  [🔍 Search for an extension...]                                       [📖 Docs]│
+├──────────────────────┬─────────┬────────────┬────────────────────────────────────────────┬─────────────┤
+│ NAME                 │ VERSION │ SCHEMA     │ DESCRIPTION                                │ ENABLED     │
+├──────────────────────┼─────────┼────────────┼────────────────────────────────────────────┼─────────────┤
+│ 🟢 pgcrypto          │ 1.3     │ extensions │ Cryptographic functions & password hashing │ (🔘 ON)     │
+│ 🟢 uuid-ossp         │ 1.1     │ extensions │ Generate universally unique identifiers    │ (🔘 ON)     │
+│ 🟢 pg_stat_statements│ 1.11    │ extensions │ Track execution statistics of SQL queries  │ (🔘 ON)     │
+│ 🟢 plpgsql           │ 1.0     │ pg_catalog │ PL/pgSQL procedural programming language   │ (🔘 ON)     │
+│ ⚪ pg_net            │ 0.20.4  │ extensions │ Async HTTP client (Used by Webhooks)       │ (⚪ OFF)    │
+│ ⚪ pg_cron           │ 1.6.4   │ extensions │ In-database job scheduler for PostgreSQL   │ (⚪ OFF)    │
+│ ⚪ pgmq              │ 1.5.1   │ extensions │ Lightweight message queue (like AWS SQS)   │ (⚪ OFF)    │
+│ ⚪ pg_hashids        │ 1.3.0   │ extensions │ Generate short alphanumeric YouTube-like ID│ (⚪ OFF)    │
+│ ⚪ pgvector          │ 0.8.0   │ extensions │ Vector embeddings for AI & Semantic Search │ (⚪ OFF)    │
+└──────────────────────┴─────────┴────────────┴────────────────────────────────────────────┴─────────────┘
+```
+
+---
+
+### 14.1 Mengapa Supabase Menggunakan Schema `extensions`?
+
+Secara default di PostgreSQL standar, ekstensi diinstal ke dalam skema `public`. Namun di Supabase, seluruh ekstensi diinstal secara rapi di dalam skema terpisah bernama **`extensions`**.
+
+**Keuntungan Arsitektural**:
+1. **Kebersihan Skema `public`**: Mencegah puluhan fungsi internal ekstensi mengotori daftar tabel/fungsi aplikasi MariFlow Anda di Table Editor.
+2. **Keamanan Ekstra**: Skema `extensions` tidak diekspos secara publik oleh PostgREST API Gateway, sehingga aman dari potensi eksekusi fungsi kriptografi sewenang-wenang dari frontend.
+
+---
+
+### 14.2 4 Ekstensi Utama yang Wajib Aktif (*Enabled by Default*) untuk MariFlow
+
+1. **`uuid-ossp` (v1.1)**:
+   - **Fungsi**: Menyediakan fungsi `uuid_generate_v4()` untuk menghasilkan Primary Key unik global 128-bit pada tabel `workspaces`, `projects`, `tasks`, dan `comments`.
+2. **`pgcrypto` (v1.3)**:
+   - **Fungsi**: Menyediakan algoritma kriptografi canggih seperti `crypt()` dan `gen_salt('bf')` untuk mengenkripsi kata sandi akun pengguna demo di seeder serta fungsi HMAC/SHA256 untuk verifikasi signature.
+3. **`pg_stat_statements` (v1.11)**:
+   - **Fungsi**: Merekam metrik waktu eksekusi seluruh query SQL di latar belakang. Ekstensi ini menjadi fondasi bagi menu **Advisors** dan **Observability** untuk mendeteksi *Slow Queries*.
+4. **`plpgsql` (v1.0)**:
+   - **Fungsi**: Bahasa pemrograman prosedural inti PostgreSQL yang memungkinkan kita membuat stored procedures dan database triggers (seperti fungsi RPC statistik dashboard kita).
+
+---
+
+### 14.3 Ekstensi Pilihan SaaS Paling Berguna untuk Pengembangan Fitur Lanjutan
+
+Berdasarkan daftar ekstensi yang ada di tangkapan layar, berikut adalah ekstensi terbaik yang dapat diaktifkan saat MariFlow berkembang:
+
+| Nama Ekstensi | Deskripsi & Kegunaan Nyata untuk SaaS | Contoh Use Case di MariFlow |
+| :--- | :--- | :--- |
+| **`pg_net`** | **Async HTTP Networking Client**: Melakukan panggilan HTTP/HTTPS (GET, POST) asinkron langsung dari trigger database tanpa memblokir transaksi user. | Mengirim notifikasi webhook ke Slack, Discord, atau WhatsApp Gateway saat ada tugas kanban yang *Overdue*. |
+| **`pg_cron`** | **In-Database Job Scheduler**: Menjadwalkan eksekusi query SQL berkala layaknya Linux Cron (`* * * * *`). | Mengarsipkan otomatis tugas yang sudah selesai lebih dari 30 hari atau mengirim rekap email mingguan setiap Senin pagi. |
+| **`pgmq`** | **Lightweight Message Queue**: Sistem antrean pesan (Queue / Job Worker) murni di dalam PostgreSQL tanpa perlu Redis, RabbitMQ, atau AWS SQS. | Menangani antrean pengiriman email massal dan pemrosesan kompresi dokumen di latar belakang. |
+| **`pg_hashids`** | **Short Unique ID Generator**: Mengubah ID integer menjadi kode pendek acak (seperti ID video YouTube `dQw4w9WgXcQ`). | Membuat tautan undangan workspace pendek yang ramah dibagikan (misal: `mariflow.app/invite/xK9jL2`). |
+| **`index_advisor`** | **Query Optimization Advisor**: Menganalisis query yang Anda jalankan dan merekomendasikan pembuatan indeks yang tepat untuk mempercepat query. | Membantu menemukan kolom filter yang perlu diindeks saat jumlah data tugas mencapai puluhan ribu. |
+| **`pg_jsonschema`** | **JSON Schema Validator**: Memvalidasi integritas struktur data kolom `jsonb` agar sesuai dengan skema JSON standar. | Memastikan kolom `metadata` atau `custom_fields` pada kartu tugas selalu memiliki tipe data yang valid. |
+| **`fuzzystrmatch`** | **Fuzzy String Matching (Levenshtein)**: Algoritma pencocokan kemiripan string toleran saltik (*typo-tolerant search*). | Memungkinkan pencarian tugas tetap menemukan hasil meskipun pengguna salah mengetik 1-2 huruf pada judul tugas. |
+| **`pg_repack`** | **Online Table Defragmentation**: Merapikan dan mengklaim kembali ruang disk kosong pada tabel besar tanpa mengunci (*table lock*) database. | Pemeliharaan database saat data lama dihapus secara massal agar ukuran database tetap hemat di Free Tier. |
+| **`pgvector`** | **Vector Similarity Search**: Menyimpan dan mencari vektor embedding kecerdasan buatan. | Fitur AI Semantic Search untuk mencari tugas atau dokumen berdasarkan konteks makna, bukan sekadar kata kunci teks murni. |
+
+---
+
+### 14.4 Cara Mengaktifkan Ekstensi via SQL Script
+
+Selain mengklik tombol toggle di dashboard, Anda dapat mengaktifkan ekstensi melalui SQL Editor:
+
+```sql
+-- Mengaktifkan ekstensi pgcrypto ke dalam skema extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+
+-- Mengaktifkan ekstensi pg_net untuk Database Webhooks
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA extensions;
+
+-- Mengaktifkan ekstensi pg_cron untuk Scheduled Jobs
+CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA extensions;
+```
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
