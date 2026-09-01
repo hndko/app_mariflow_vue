@@ -25,6 +25,9 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [10.1 Komponen Halaman Utama Table Editor & Batch Edit](#101-komponen-halaman-utama-table-editor)
     - [10.2 Anatomi Modal Drawer "Create a new table under public"](#102-anatomi-modal-drawer-create-a-new-table-under-public)
     - [10.3 Penjelasan Detail Tiap Opsi Pembuatan Tabel (RLS, Realtime, Columns, FK, API)](#103-penjelasan-detail-tiap-opsi-pembuatan-tabel)
+11. [Matriks Komparasi: FREE Tier vs PRO Tier (Panduan Batasan & Skalabilitas)](#-11-matriks-komparasi-free-tier-vs-pro-tier-panduan-batasan--skalabilitas)
+    - [11.1 Rincian Fitur Bebas Pakai di FREE Tier](#111-rincian-fitur-bebas-pakai-di-free-tier-cukup-untuk-pengembangan--mvp)
+    - [11.2 Daftar Fitur Eksklusif PRO TIER (Terkunci)](#112-daftar-fitur-eksklusif-pro-tier--wajib-diperhatikan)
 
 ---
 
@@ -396,6 +399,60 @@ Saat tombol **`+ New table`** diklik, Supabase membuka drawer konfigurasi tabel:
 
 ---
 
+## 💎 11. Matriks Komparasi: FREE Tier vs PRO Tier (Panduan Batasan & Skalabilitas)
+
+Karena saat ini kita menggunakan **FREE Tier** di organisasi `Mari Partner`, berikut adalah panduan lengkap fitur yang **Bebas Digunakan Gratis** vs fitur yang **Terkunci di Paket PRO ($25/bulan)**:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🟢 FREE TIER (Paket MariFlow Saat Ini)          vs          🔒 PRO TIER ($25/bulan)                    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 💾 500 MB Database PostgreSQL Storage                       💾 8 GB Database Storage Included          │
+│ ⚙️ Compute NANO (Shared CPU, 0.5 GB RAM)                    ⚙️ Micro / Small / Medium Dedicated Compute │
+│ ⏸️ Auto-pause setelah 7 hari tidak aktif                    🚫 Bebas Pause (Selalu Aktif 24/7)         │
+│ 📦 1 GB Storage Buckets (File Max 50 MB)                    📦 100 GB Storage Buckets (File Max 5 GB)  │
+│ 📡 200 Realtime Concurrent Connections                      📡 500 Realtime Concurrent Connections     │
+│ 🔑 50,000 Monthly Active Users (MAU)                        🔑 100,000 MAU + SAML SSO (Okta / Azure)   │
+│ ⚡ 500,000 Edge Function Invocations/bln                    ⚡ 2,000,000 Invocations/bln               │
+│ 📋 1 Hari Log Retention                                     📋 7 Hari Log Retention + PITR Backup      │
+│ 🌿 1 Branch Produksi (Main)                                 🌿 Database Branching per Pull Request     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.1 Rincian Fitur Bebas Pakai di FREE Tier (Cukup untuk Pengembangan & MVP)
+
+1. **Database PostgreSQL Penuh**:
+   - Bebas membuat tabel, skema, foreign key, triggers, views, dan RPC stored procedures tanpa batas jumlah tabel.
+2. **Row Level Security (RLS)**:
+   - 100% didukung penuh tanpa batasan pada Free Tier.
+3. **Supabase Auth (Otentikasi)**:
+   - Mendukung login Email/Password, Magic Link, dan Social Login OAuth (Google, GitHub, Discord, dll) hingga 50.000 pengguna aktif per bulan.
+4. **Realtime WebSockets**:
+   - Hingga 200 pengguna online bersamaan (*concurrent connections*) yang memantau Kanban board MariFlow secara sinkron.
+5. **Storage Buckets**:
+   - Hingga 1 GB total kapasitas berkas avatar dan lampiran dokumen tugas (ukuran per file maksimal 50 MB).
+
+---
+
+### 11.2 Daftar Fitur Eksklusif PRO TIER 🔒 (Wajib Diperhatikan)
+
+Jika Anda melihat tombol atau opsi berikut di dashboard Supabase, fitur tersebut **memerlukan langganan PRO**:
+
+| Fitur | Status Tier | Dampak & Alternatif untuk MariFlow (FREE) |
+| :--- | :---: | :--- |
+| **Point-in-Time Recovery (PITR)** | 🔒 **PRO** | Rollback database ke detik tertentu. Di Free Tier, gunakan ekspor SQL berkala via SQL Editor / CLI. |
+| **Database Branching** | 🔒 **PRO** | Membuat clone database terpisah per Git Pull Request. Di Free Tier, gunakan Supabase Local CLI Docker untuk staging. |
+| **Image Transformation (`/render/image/`)** | 🔒 **PRO** | Resize & kompresi gambar on-the-fly dari URL Storage. Di Free Tier, kompres gambar di sisi frontend Vue sebelum upload. |
+| **Custom Domain Auth (auth.mariflow.com)** | 🔒 **PRO** | Menghilangkan URL `supabase.co` pada email verifikasi. Di Free Tier, gunakan redirect URL frontend. |
+| **SAML 2.0 / Enterprise SSO** | 🔒 **PRO** | Login via Okta, Azure AD, OneLogin untuk perusahaan korporat besar. |
+| **Log Retention > 1 Hari** | 🔒 **PRO** | Free Tier menyimpan log API Gateway & Postgres selama 24 jam terakhir. |
+| **Inactivity Auto-pause** | ⚠️ **FREE Note** | Jika database tidak menerima query selama **7 hari berturut-turut**, project akan otomatis tidur (*paused*). Cukup klik tombol **Restore** di dashboard untuk membangunkannya kembali tanpa kehilangan data. |
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
