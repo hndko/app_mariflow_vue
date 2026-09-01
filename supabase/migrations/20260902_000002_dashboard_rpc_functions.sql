@@ -77,7 +77,11 @@ BEGIN
 
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$ LANGUAGE plpgsql SECURITY INVOKER STABLE
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.get_workspace_statistics(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_workspace_statistics(UUID) TO authenticated;
 
 -- 2. Trigger: Automatic Activity Log for Task Changes
 CREATE OR REPLACE FUNCTION public.log_task_activity()
@@ -108,7 +112,10 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.log_task_activity() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_log_task_activity ON public.tasks;
 CREATE TRIGGER trg_log_task_activity

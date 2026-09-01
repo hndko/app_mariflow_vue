@@ -20,7 +20,10 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.set_updated_at() FROM PUBLIC, anon, authenticated;
 
 -- 3. TABLES DEFINITION
 
@@ -205,7 +208,10 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -237,7 +243,11 @@ BEGIN
         WHERE workspace_id = ws_id AND user_id = auth.uid()
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.is_workspace_member(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_workspace_member(UUID) TO authenticated;
 
 -- Helper function: Get user role in workspace
 CREATE OR REPLACE FUNCTION public.get_workspace_role(ws_id UUID)
@@ -249,7 +259,11 @@ BEGIN
     WHERE workspace_id = ws_id AND user_id = auth.uid();
     RETURN user_role;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.get_workspace_role(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_workspace_role(UUID) TO authenticated;
 
 -- 7.1 PROFILES POLICIES
 CREATE POLICY "Public profiles are viewable by authenticated users"

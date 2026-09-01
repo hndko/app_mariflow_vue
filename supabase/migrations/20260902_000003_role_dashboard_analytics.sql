@@ -218,4 +218,8 @@ BEGIN
 
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$ LANGUAGE plpgsql SECURITY INVOKER STABLE
+SET search_path = public, pg_temp;
+
+REVOKE ALL ON FUNCTION public.get_role_dashboard_statistics(UUID, UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_role_dashboard_statistics(UUID, UUID, TEXT) TO authenticated;
