@@ -22,6 +22,33 @@ BEGIN
     IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
     IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
     IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
+
+    -- Jika database masih benar-benar kosong, buat auth user & profile darurat
+    IF owner_uid IS NULL THEN
+        owner_uid := '00000000-0000-0000-0000-000000000002'::UUID;
+
+        INSERT INTO auth.users (
+            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        ) VALUES (
+            owner_uid,
+            '00000000-0000-0000-0000-000000000000',
+            'authenticated',
+            'authenticated',
+            'owner@example.com',
+            crypt('password', gen_salt('bf')),
+            NOW(),
+            '{"provider":"email","providers":["email"]}',
+            '{"full_name":"Budi Santoso (Owner)"}',
+            NOW(),
+            NOW()
+        ) ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.profiles (id, full_name, email, created_at, updated_at)
+        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
 
     INSERT INTO public.projects (id, workspace_id, name, description, status, start_date, due_date, created_by, created_at, updated_at)
