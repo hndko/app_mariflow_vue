@@ -152,8 +152,10 @@ const router = createRouter({
   routes,
 })
 
-// Navigation Guards for Authentication & Titles
-router.beforeEach(async (to, _from, next) => {
+import { CheckRoleMiddleware } from './middleware/CheckRoleMiddleware'
+
+// Navigation Guards for Authentication, Titles & Role Checks
+router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title ? `${to.meta.title} | ` : ''}MariFlow SaaS — Simple Workspace & Task Management`
 
   const authStore = useAuthStore()
@@ -169,9 +171,6 @@ router.beforeEach(async (to, _from, next) => {
 
   // Handle protected routes
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // If not authenticated and trying to access protected route, allow guest / demo or redirect to login
-    // In production with active Supabase credentials, redirect to /login
-    // During local dev without active server session, let user navigate or prompt login
     if (!authStore.session && !localStorage.getItem('mariflow_guest_bypass')) {
       return next({ name: 'Login' })
     }
@@ -182,7 +181,8 @@ router.beforeEach(async (to, _from, next) => {
     return next({ name: 'Dashboard' })
   }
 
-  next()
+  // Check Role Authorization with unified CheckRoleMiddleware
+  await CheckRoleMiddleware(to, from, next)
 })
 
 export default router
