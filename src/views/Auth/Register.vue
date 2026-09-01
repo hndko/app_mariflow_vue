@@ -1,17 +1,5 @@
 <template>
-  <div class="flex flex-col flex-1 lg:w-1/2 w-full">
-    <div class="w-full max-w-md pt-8 mx-auto">
-      <router-link
-        to="/"
-        class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
-      >
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Kembali ke Beranda
-      </router-link>
-    </div>
-
+  <div class="flex flex-col flex-1 lg:w-1/2 w-full justify-center">
     <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto py-6">
       <div class="mb-5 text-center sm:text-left">
         <div class="flex items-center gap-2 mb-2">
