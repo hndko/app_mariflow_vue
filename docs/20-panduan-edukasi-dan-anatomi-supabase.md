@@ -100,6 +100,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [27.1 Anatomi Bucket: Public vs Private](#271--anatomi-bucket-public-vs-private)
     - [27.2 Keunggulan Arsitektur: RLS di Tingkat File (storage.objects)](#272--keunggulan-arsitektur-rls-di-tingkat-file-storageobjects)
     - [27.3 Storage Settings: FREE Tier vs PRO Tier](#273--storage-settings-free-tier-vs-pro-tier)
+28. [Bedah Lengkap Analytics Buckets (Apache Iceberg) & Vector Buckets (AI Embeddings)](#-28-bedah-lengkap-analytics-buckets-apache-iceberg--vector-buckets-ai-embeddings)
+    - [28.1 Analytics Buckets (PostgreSQL Foreign Data Wrapper + Apache Iceberg)](#281--analytics-buckets-postgresql-foreign-data-wrapper--apache-iceberg)
+    - [28.2 Vector Buckets (AI Embeddings & Semantic Search Skala Besar)](#282--vector-buckets-ai-embeddings--semantic-search-skala-besar)
+    - [28.3 Status Tier & Tahap Rilis](#283--status-tier--tahap-rilis)
 
 ---
 
@@ -1810,7 +1814,63 @@ Di tab **Settings**, terdapat perbandingan fitur:
 
 ---
 
+## 📊🤖 28. Bedah Lengkap Analytics Buckets (Apache Iceberg) & Vector Buckets (AI Embeddings)
+
+Sub-menu **Analytics [NEW]** dan **Vectors [NEW]** (di bawah menu `Storage ➔ MANAGE`) adalah inovasi infrastruktur *Data Lakehouse* & *AI Storage* generasi terbaru di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 📊🤖 ADVANCED STORAGE ENGINES (Analytics & Vector Buckets)                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📊 1. ANALYTICS BUCKETS (Purpose-built for Analytical Workloads):                                      │
+│  - Teknologi Integrasi: Ekstensi 'wrappers' + 'Apache Iceberg Wrapper' (PostgreSQL FDW).               │
+│  - Format Data        : File Apache Parquet terkompresi di Object Storage.                             │
+│  - Keunggulan         : Query jutaan log riwayat via SQL murni tanpa membebani disk PostgreSQL!       │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🤖 2. VECTOR BUCKETS (Purpose-built for AI Embeddings at Scale):                                       │
+│  - Teknologi Integrasi: Ekstensi 'wrappers' + 'S3 Vectors Wrapper' + 'pgvector'.                       │
+│  - Fungsi             : Menyimpan dan mengindeks miliaran vector embedding teks/dokumen secara murah.  │
+│  - Skenario MariFlow  : AI Semantic Search & RAG Chatbot asisten tugas proyek.                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⚠️ TAHAP RILIS & KESIAPAN:                                                                             │
+│  - Status: Private Alpha [NEW] (Eksplorasi / Belum wajib diimplementasikan untuk MVP MariFlow).      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 28.1 📊 Analytics Buckets (PostgreSQL Foreign Data Wrapper + Apache Iceberg)
+
+1. **Apa itu Analytics Buckets?**:
+   - Wadah penyimpanan khusus data masif (*Data Lake*) berbasis format tabel terbuka **Apache Iceberg**.
+2. **Cara Kerja Teknis**:
+   - Saat Anda membuat bucket ini, Supabase secara otomatis mengaktifkan ekstensi **`wrappers`** dan menghubungkan PostgreSQL ke S3 menggunakan protokol *Foreign Data Wrapper (FDW)*.
+   - Data historis (seperti jutaan activity logs atau data analitik tugas) dapat diekspor ke format Parquet di storage.
+   - Developer dapat menjalankan query analitik SQL langsung (`SELECT AVG(duration) FROM iceberg_task_metrics WHERE created_at >= '2025-01-01'`) langsung dari database MariFlow dengan kecepatan tinggi dan biaya penyimpanan yang sangat murah.
+
+---
+
+### 28.2 🤖 Vector Buckets (AI Embeddings & Semantic Search Skala Besar)
+
+1. **Apa itu Vector Buckets?**:
+   - Wadah penyimpanan yang dirancang untuk menyimpan jutaan representasi vektor (*embeddings*) dari model AI (seperti OpenAI text-embedding-3 atau Google Gemini Embeddings).
+2. **Mengapa Diperlukan Vector Bucket Terpisah?**:
+   - Menyimpan jutaan array vektor berdimensi 1536 di dalam tabel PostgreSQL standar dapat memakan banyak RAM (Memory) dan kapasitas disk SSD database.
+   - Dengan **Vector Buckets**, file vektor mentah disimpan di S3 storage yang murah, sementara PostgreSQL melalui **`S3 Vectors Wrapper`** bertindak sebagai mesin pencari cepat (*Approximate Nearest Neighbor / Cosine Distance Search*).
+3. **Peluang Implementasi di MariFlow**:
+   - **Fitur Pencarian Cerdas AI (*Smart Semantic Search*)**: Anggota tim dapat mencari tugas hanya dengan mengetik pertanyaan bahasa alami: *"Di mana file mockup yang dibuat minggu lalu tentang halaman login?"*.
+
+---
+
+### 28.3 ⚠️ Status Tier & Tahap Rilis
+
+- **Status Saat Ini**: Kedua fitur ini berstatus **`Private Alpha [NEW]`**.
+- **Untuk Tahap MariFlow Saat Ini**: Kita menggunakan tabel relasional standar `projects`, `tasks`, dan `activity_logs` yang didukung oleh RPC functions analitik berkinerja tinggi, sehingga kita belum memerlukan Analytics / Vector Buckets untuk tahap MVP / rilis awal.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
