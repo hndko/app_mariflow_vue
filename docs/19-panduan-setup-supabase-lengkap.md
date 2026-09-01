@@ -137,23 +137,36 @@ supabase start
 
 Eksekusi file migrasi SQL yang berada di folder `supabase/migrations/` secara **berurutan**:
 
-#### Urutan File Migrasi:
+#### Urutan File Migrasi DDL Skema:
 1. `supabase/migrations/20260902_000001_create_mariflow_schema.sql` (Schema DDL, Tabel, Relasi FK, Triggers, RLS Policies)
-2. `supabase/migrations/20260902_000002_seed_demo_data.sql` (Data Awal Mock/Demo Profil, Workspace, Proyek, dan Tugas)
-3. `supabase/migrations/20260902_000003_role_dashboard_analytics.sql` (Fungsi RPC Agregasi Statistik Dashboard Multi-Role)
+2. `supabase/migrations/20260902_000002_dashboard_rpc_functions.sql` (Fungsi RPC Agregasi Statistik Dashboard)
+3. `supabase/migrations/20260902_000003_role_dashboard_analytics.sql` (Fungsi RPC Analytics Multi-Role)
 4. `supabase/migrations/20260902_000004_add_superadmin_role.sql` (Penambahan Role Superadmin ke Enum `user_role`)
 
-#### Cara Eksekusi via Supabase Dashboard:
+#### Menjalankan Seed Data (`supabase/seeders/`):
+Seluruh data awal awal demo dan pengujian tersusun modular di dalam subfolder **`supabase/seeders/`**:
+- `supabase/seeders/01_auth_users_and_profiles.sql` (Akun Demo: Superadmin, Owner, Admin, Member, Viewer)
+- `supabase/seeders/02_workspaces_and_members.sql` (Workspace Mari Partner Hub, Client Projects, Mobile App Team)
+- `supabase/seeders/03_projects.sql` (Proyek MariFlow v1.0, Landing Page, Payment System, Audit Keamanan)
+- `supabase/seeders/04_tasks_kanban.sql` (11+ Tugas Kanban lengkap dengan status To Do, In Progress, Review, Completed)
+- `supabase/seeders/05_task_comments_and_attachments.sql` (Komentar diskusi & berkas lampiran demo)
+- `supabase/seeders/master_seed.sql` (**Master All-in-One Seeder** untuk eksekusi 1-klik)
+
+#### Cara Eksekusi via Supabase Cloud SQL Editor:
 1. Buka dashboard project `mariflow-dev` di Supabase.
 2. Di sidebar kiri, klik menu **SQL Editor** (icon `>_`).
 3. Klik tombol **+ New query**.
-4. Buka file `supabase/migrations/20260902_000001_create_mariflow_schema.sql`, salin seluruh kodenya, tempel (*paste*) ke SQL Editor, lalu klik tombol **Run**.
-5. Ulangi langkah di atas untuk file `20260902_000002_seed_demo_data.sql`.
-6. Ulangi langkah di atas untuk file `20260902_000003_role_dashboard_analytics.sql`.
-7. Ulangi langkah di atas untuk file `20260902_000004_add_superadmin_role.sql`.
+4. Buka file `supabase/migrations/20260902_000001_create_mariflow_schema.sql`, salin seluruh isinya, tempel ke SQL Editor, lalu klik **Run**.
+5. Ulangi untuk file `20260902_000002_dashboard_rpc_functions.sql`, `20260902_000003_role_dashboard_analytics.sql`, dan `20260902_000004_add_superadmin_role.sql`.
+6. Terakhir, buka file **`supabase/seeders/master_seed.sql`**, salin kodenya, tempel ke SQL Editor, lalu klik **Run** untuk mengisi seluruh data awal!
 
 > [!TIP]
-> Jika menggunakan Supabase CLI lokal: cukup jalankan perintah `supabase db reset` atau `supabase migration up`.
+> **Daftar Akun Demo Hasil Seeder**:
+> - **Superadmin**: `hd.doko22@gmail.com` | Kata Sandi: `password123`
+> - **Owner**: `budi@maripartner.com` | Kata Sandi: `password123`
+> - **Admin**: `siti@maripartner.com` | Kata Sandi: `password123`
+> - **Member**: `rian@maripartner.com` | Kata Sandi: `password123`
+> - **Viewer**: `maya@maripartner.com` | Kata Sandi: `password123`
 
 ---
 
