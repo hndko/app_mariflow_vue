@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { authService } from '@/services/auth/auth.service'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -104,7 +105,7 @@ const handleResetRequest = async () => {
     await authService.resetPasswordForEmail(email.value)
     successMessage.value = 'Instruksi pemulihan telah dikirim ke email Anda. Silakan periksa kotak masuk atau spam.'
   } catch (err: any) {
-    errorMessage.value = err.message || 'Gagal mengirim email reset kata sandi.'
+    errorMessage.value = getCustomErrorMessage(err, 'Gagal mengirim email reset kata sandi. Silakan periksa kembali email Anda.')
   } finally {
     loading.value = false
   }

@@ -231,6 +231,7 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import BaseDropzone, { type UploadFileItem } from '@/components/common/BaseDropzone.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 
 const authStore = useAuthStore()
 
@@ -272,9 +273,7 @@ const saveProfile = async () => {
   try {
     let uploadedAvatarUrl = previewAvatar.value
 
-    // If a new avatar file was picked, in a full Supabase storage scenario we upload to bucket 'avatars'
     if (avatarFileList.value.length > 0 && avatarFileList.value[0].rawFile) {
-      // If mock/local, keep object preview or public URL
       uploadedAvatarUrl = previewAvatar.value
     }
 
@@ -285,7 +284,7 @@ const saveProfile = async () => {
 
     successMessage.value = 'Profil Anda berhasil diperbarui!'
   } catch (err: any) {
-    errorMessage.value = err.message || 'Gagal menyimpan pembaruan profil.'
+    errorMessage.value = getCustomErrorMessage(err, 'Gagal menyimpan pembaruan profil.')
   } finally {
     saving.value = false
   }
@@ -293,7 +292,7 @@ const saveProfile = async () => {
 
 const handleChangePassword = async () => {
   if (newPassword.value.length < 6) {
-    passwordError.value = 'Kata sandi minimal 6 karakter.'
+    passwordError.value = 'Kata sandi minimal 6 karakter demi keamanan akun Anda.'
     return
   }
   if (newPassword.value !== confirmNewPassword.value) {
@@ -310,7 +309,7 @@ const handleChangePassword = async () => {
     confirmNewPassword.value = ''
     successMessage.value = 'Kata sandi berhasil diperbarui.'
   } catch (err: any) {
-    passwordError.value = err.message || 'Gagal memperbarui kata sandi.'
+    passwordError.value = getCustomErrorMessage(err, 'Gagal memperbarui kata sandi. Silakan coba kembali.')
   } finally {
     updatingPassword.value = false
   }

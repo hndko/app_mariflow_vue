@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { workspaceService } from '@/services/modules/workspace.service'
 import { useAuthStore } from './auth'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import type { Workspace, WorkspaceMember, UserRole } from '@/types/database.types'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
@@ -77,7 +78,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
     } catch (err: any) {
       console.error('[WorkspaceStore] Failed to load workspaces:', err)
-      error.value = err.message || 'Gagal memuat daftar workspace'
+      error.value = getCustomErrorMessage(err, 'Gagal memuat daftar workspace. Silakan periksa koneksi internet Anda.')
     } finally {
       loading.value = false
     }
@@ -123,8 +124,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       switchWorkspace(created)
       return created
     } catch (err: any) {
-      error.value = err.message || 'Gagal membuat workspace baru'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal membuat workspace baru. Silakan periksa isian data Anda.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -225,9 +227,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       return newMember
     }
 
-    const member = await workspaceService.addMemberByEmail(currentWorkspace.value.id, email, role)
-    members.value.push(member)
-    return member
+    try {
+      const member = await workspaceService.addMemberByEmail(currentWorkspace.value.id, email, role)
+      members.value.push(member)
+      return member
+    } catch (err: any) {
+      const friendlyMsg = getCustomErrorMessage(err, `Gagal mengundang ${email} ke workspace.`)
+      throw new Error(friendlyMsg)
+    }
   }
 
   /**
@@ -235,12 +242,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    */
   async function updateMemberRole(memberId: string, role: UserRole) {
     const authStore = useAuthStore()
-    if (authStore.user) {
-      await workspaceService.updateMemberRole(memberId, role)
-    }
-    const idx = members.value.findIndex((m) => m.id === memberId)
-    if (idx !== -1) {
-      members.value[idx].role = role
+    try {
+      if (authStore.user) {
+        await workspaceService.updateMemberRole(memberId, role)
+      }
+      const idx = members.value.findIndex((m) => m.id === memberId)
+      if (idx !== -1) {
+        members.value[idx].role = role
+      }
+    } catch (err: any) {
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal memperbarui peran anggota.')
+      throw new Error(friendlyMsg)
     }
   }
 
@@ -249,10 +261,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    */
   async function removeMember(memberId: string) {
     const authStore = useAuthStore()
-    if (authStore.user) {
-      await workspaceService.removeMember(memberId)
+    try {
+      if (authStore.user) {
+        await workspaceService.removeMember(memberId)
+      }
+      members.value = members.value.filter((m) => m.id !== memberId)
+    } catch (err: any) {
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal menghapus anggota dari workspace.')
+      throw new Error(friendlyMsg)
     }
-    members.value = members.value.filter((m) => m.id !== memberId)
   }
 
   return {

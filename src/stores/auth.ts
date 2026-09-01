@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/services/supabase'
 import { authService } from '@/services/auth/auth.service'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import type { Profile, UserRole } from '@/types/database.types'
 import type { User, Session } from '@supabase/supabase-js'
 
@@ -35,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err: any) {
       console.error('[AuthStore] Initialization failed:', err)
-      error.value = err.message || 'Gagal memuat sesi pengguna'
+      error.value = getCustomErrorMessage(err, 'Gagal memuat sesi pengguna. Silakan masuk kembali.')
     } finally {
       loading.value = false
     }
@@ -91,8 +92,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return data
     } catch (err: any) {
-      error.value = err.message || 'Gagal melakukan pendaftaran'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Pendaftaran akun gagal. Silakan periksa kembali data Anda.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -113,8 +115,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return data
     } catch (err: any) {
-      error.value = err.message || 'Gagal masuk akun'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal masuk akun. Periksa kembali email dan kata sandi Anda.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -149,8 +152,9 @@ export const useAuthStore = defineStore('auth', () => {
       profile.value = updated
       return updated
     } catch (err: any) {
-      error.value = err.message || 'Gagal memperbarui profil'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal memperbarui profil pengguna.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }

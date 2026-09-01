@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { taskService } from '@/services/modules/task.service'
 import { useWorkspaceStore } from './workspace'
 import { useAuthStore } from './auth'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import type { Task, TaskStatus, TaskPriority, TaskComment, TaskAttachment } from '@/types/database.types'
 
 export const useTaskStore = defineStore('task', () => {
@@ -135,7 +136,7 @@ export const useTaskStore = defineStore('task', () => {
       tasks.value = await taskService.getTasks(workspaceStore.currentWorkspaceId, projectId)
     } catch (err: any) {
       console.error('[TaskStore] Failed to load tasks:', err)
-      error.value = err.message || 'Gagal memuat daftar tugas'
+      error.value = getCustomErrorMessage(err, 'Gagal memuat daftar tugas')
     } finally {
       loading.value = false
     }
@@ -191,8 +192,9 @@ export const useTaskStore = defineStore('task', () => {
       tasks.value.unshift(created)
       return created
     } catch (err: any) {
-      error.value = err.message || 'Gagal membuat tugas baru'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal membuat tugas baru. Silakan periksa kembali data Anda.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -243,8 +245,9 @@ export const useTaskStore = defineStore('task', () => {
         }
       }
     } catch (err: any) {
-      error.value = err.message || 'Gagal memperbarui tugas'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal memperbarui data tugas.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     }
   }
 

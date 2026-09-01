@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { projectService } from '@/services/modules/project.service'
 import { useWorkspaceStore } from './workspace'
 import { useAuthStore } from './auth'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import type { Project, ProjectStatus } from '@/types/database.types'
 
 export const useProjectStore = defineStore('project', () => {
@@ -79,7 +80,7 @@ export const useProjectStore = defineStore('project', () => {
       projects.value = await projectService.getProjects(workspaceStore.currentWorkspaceId, status)
     } catch (err: any) {
       console.error('[ProjectStore] Failed to load projects:', err)
-      error.value = err.message || 'Gagal memuat daftar proyek'
+      error.value = getCustomErrorMessage(err, 'Gagal memuat daftar proyek pada workspace ini.')
     } finally {
       loading.value = false
     }
@@ -99,7 +100,7 @@ export const useProjectStore = defineStore('project', () => {
     const authStore = useAuthStore()
 
     if (!workspaceStore.currentWorkspaceId) {
-      throw new Error('Pilih workspace terlebih dahulu.')
+      throw new Error('Pilih workspace aktif terlebih dahulu.')
     }
 
     loading.value = true
@@ -138,8 +139,9 @@ export const useProjectStore = defineStore('project', () => {
       projects.value.unshift(created)
       return created
     } catch (err: any) {
-      error.value = err.message || 'Gagal membuat proyek baru'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal membuat proyek baru. Periksa kembali data Anda.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -164,8 +166,9 @@ export const useProjectStore = defineStore('project', () => {
         }
       }
     } catch (err: any) {
-      error.value = err.message || 'Gagal memperbarui proyek'
-      throw err
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal memperbarui data proyek.')
+      error.value = friendlyMsg
+      throw new Error(friendlyMsg)
     } finally {
       loading.value = false
     }
@@ -176,10 +179,15 @@ export const useProjectStore = defineStore('project', () => {
    */
   async function deleteProject(projectId: string) {
     const authStore = useAuthStore()
-    if (authStore.user) {
-      await projectService.deleteProject(projectId)
+    try {
+      if (authStore.user) {
+        await projectService.deleteProject(projectId)
+      }
+      projects.value = projects.value.filter((p) => p.id !== projectId)
+    } catch (err: any) {
+      const friendlyMsg = getCustomErrorMessage(err, 'Gagal menghapus proyek.')
+      throw new Error(friendlyMsg)
     }
-    projects.value = projects.value.filter((p) => p.id !== projectId)
   }
 
   return {

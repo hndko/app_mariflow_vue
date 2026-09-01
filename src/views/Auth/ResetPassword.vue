@@ -91,6 +91,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '@/services/auth/auth.service'
+import { getCustomErrorMessage } from '@/utils/errorHandler'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -103,11 +104,11 @@ const success = ref(false)
 
 const handleUpdatePassword = async () => {
   if (newPassword.value.length < 6) {
-    errorMessage.value = 'Kata sandi minimal 6 karakter.'
+    errorMessage.value = 'Kata sandi minimal 6 karakter demi keamanan akun Anda.'
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    errorMessage.value = 'Konfirmasi kata sandi tidak cocok.'
+    errorMessage.value = 'Konfirmasi kata sandi tidak cocok dengan kata sandi baru.'
     return
   }
 
@@ -120,7 +121,7 @@ const handleUpdatePassword = async () => {
       router.push('/login')
     }, 2000)
   } catch (err: any) {
-    errorMessage.value = err.message || 'Gagal memperbarui kata sandi.'
+    errorMessage.value = getCustomErrorMessage(err, 'Gagal memperbarui kata sandi. Silakan coba kembali.')
   } finally {
     loading.value = false
   }
