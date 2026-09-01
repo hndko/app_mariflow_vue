@@ -22,15 +22,6 @@
       </BaseButton>
     </div>
 
-    <!-- Alert Notifications -->
-    <div
-      v-if="feedbackMessage"
-      class="p-4 rounded-xl bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-800 text-sm text-success-700 dark:text-success-400 flex items-center justify-between"
-    >
-      <span>{{ feedbackMessage }}</span>
-      <button type="button" @click="feedbackMessage = ''" class="font-bold">×</button>
-    </div>
-
     <!-- Filter & Search Bar with Debounce -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-theme-xs">
       <div class="w-full sm:max-w-xs">
@@ -228,40 +219,6 @@
         </BaseButton>
       </template>
     </BaseModal>
-
-    <!-- Delete/Remove Member Confirmation Modal -->
-    <BaseModal
-      :is-open="isRemoveModalOpen"
-      title="Keluarkan Anggota"
-      @close="isRemoveModalOpen = false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-600 dark:text-gray-300">
-          Apakah Anda yakin ingin mengeluarkan <strong>{{ targetRemoveMember?.profile?.full_name || targetRemoveMember?.profile?.email }}</strong> dari workspace ini?
-        </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          Anggota ini tidak akan lagi memiliki akses ke proyek dan tugas di workspace ini.
-        </p>
-      </div>
-
-      <template #footer>
-        <BaseButton variant="outline" @click="isRemoveModalOpen = false">
-          Batal
-        </BaseButton>
-        <BaseButton
-          variant="danger"
-          :loading="removing"
-          @click="handleRemoveMember"
-        >
-          <template #startIcon>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </template>
-          Ya, Keluarkan Anggota
-        </BaseButton>
-      </template>
-    </BaseModal>
   </div>
 </template>
 
@@ -269,6 +226,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useDebounce } from '@/composables/useDebounce'
+import { showToast, showConfirm } from '@/composables/useAlert'
 import BaseTable, { type TableColumn } from '@/components/common/BaseTable.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseSelect from '@/components/common/BaseSelect.vue'
@@ -282,7 +240,6 @@ const workspaceStore = useWorkspaceStore()
 const searchQuery = ref('')
 const debouncedSearch = useDebounce(searchQuery, 300)
 const loading = ref(false)
-const feedbackMessage = ref('')
 
 const isInviteModalOpen = ref(false)
 const inviteEmail = ref('')
@@ -293,10 +250,6 @@ const inviteError = ref('')
 const isChangeRoleModalOpen = ref(false)
 const selectedMember = ref<WorkspaceMember | null>(null)
 const updatedRole = ref<UserRole>('member')
-
-const isRemoveModalOpen = ref(false)
-const targetRemoveMember = ref<WorkspaceMember | null>(null)
-const removing = ref(false)
 
 const roleOptions = [
   { value: 'admin', label: 'Admin (Mengelola Anggota & Proyek)' },
@@ -369,9 +322,10 @@ const handleInviteMember = async () => {
   try {
     await workspaceStore.inviteMember(inviteEmail.value, inviteRole.value)
     isInviteModalOpen.value = false
-    feedbackMessage.value = `Anggota baru (${inviteEmail.value}) berhasil ditambahkan ke workspace!`
+    showToast.success(`Anggota baru (${inviteEmail.value}) berhasil ditambahkan ke workspace!`)
   } catch (err: any) {
     inviteError.value = err.message || 'Gagal menambahkan anggota.'
+    showToast.error(inviteError.value)
   } finally {
     inviting.value = false
   }
@@ -385,27 +339,32 @@ const openChangeRoleModal = (member: WorkspaceMember) => {
 
 const handleUpdateRole = async () => {
   if (!selectedMember.value) return
-  await workspaceStore.updateMemberRole(selectedMember.value.id, updatedRole.value)
-  isChangeRoleModalOpen.value = false
-  feedbackMessage.value = 'Peran anggota berhasil diperbarui.'
-}
-
-const confirmRemove = (member: WorkspaceMember) => {
-  targetRemoveMember.value = member
-  isRemoveModalOpen.value = true
-}
-
-const handleRemoveMember = async () => {
-  if (!targetRemoveMember.value) return
-  removing.value = true
   try {
-    await workspaceStore.removeMember(targetRemoveMember.value.id)
-    isRemoveModalOpen.value = false
-    feedbackMessage.value = 'Anggota berhasil dikeluarkan dari workspace.'
+    await workspaceStore.updateMemberRole(selectedMember.value.id, updatedRole.value)
+    isChangeRoleModalOpen.value = false
+    showToast.success('Peran anggota berhasil diperbarui.')
   } catch (err: any) {
-    feedbackMessage.value = err.message || 'Gagal mengeluarkan anggota.'
-  } finally {
-    removing.value = false
+    showToast.error('Gagal memperbarui peran anggota.')
+  }
+}
+
+const confirmRemove = async (member: WorkspaceMember) => {
+  const memberName = member.profile?.full_name || member.profile?.email || 'anggota ini'
+  const confirmed = await showConfirm({
+    title: 'Keluarkan Anggota?',
+    text: `Apakah Anda yakin ingin mengeluarkan "${memberName}" dari workspace ini? Anggota ini tidak akan lagi memiliki akses.`,
+    confirmText: 'Ya, Keluarkan',
+    cancelText: 'Batal',
+    isDanger: true,
+  })
+
+  if (confirmed) {
+    try {
+      await workspaceStore.removeMember(member.id)
+      showToast.success(`Anggota "${memberName}" berhasil dikeluarkan dari workspace.`)
+    } catch (err: any) {
+      showToast.error(err.message || 'Gagal mengeluarkan anggota.')
+    }
   }
 }
 </script>

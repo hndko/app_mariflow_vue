@@ -24,23 +24,6 @@
       </div>
     </div>
 
-    <!-- Alert Notifications -->
-    <div
-      v-if="successMessage"
-      class="p-4 rounded-xl bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-800 text-sm text-success-700 dark:text-success-400 flex items-center justify-between"
-    >
-      <span>{{ successMessage }}</span>
-      <button type="button" @click="successMessage = ''" class="font-bold">×</button>
-    </div>
-
-    <div
-      v-if="errorMessage"
-      class="p-4 rounded-xl bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-800 text-sm text-error-700 dark:text-error-400 flex items-center justify-between"
-    >
-      <span>{{ errorMessage }}</span>
-      <button type="button" @click="errorMessage = ''" class="font-bold">×</button>
-    </div>
-
     <!-- Profile Grid Layout -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <!-- Left Column: Avatar & Summary -->
@@ -226,6 +209,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth/auth.service'
+import { showToast } from '@/composables/useAlert'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseBadge from '@/components/common/BaseBadge.vue'
@@ -239,8 +223,6 @@ const fullName = ref('')
 const previewAvatar = ref('')
 const avatarFileList = ref<UploadFileItem[]>([])
 const saving = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
 
 // Change Password State
 const isChangePasswordModalOpen = ref(false)
@@ -259,6 +241,7 @@ onMounted(() => {
 const onAvatarAdded = (item: UploadFileItem) => {
   if (item.previewUrl) {
     previewAvatar.value = item.previewUrl
+    showToast.info('Foto profil baru siap disimpan.')
   }
 }
 
@@ -268,8 +251,6 @@ const onAvatarRemoved = () => {
 
 const saveProfile = async () => {
   saving.value = true
-  successMessage.value = ''
-  errorMessage.value = ''
   try {
     let uploadedAvatarUrl = previewAvatar.value
 
@@ -282,9 +263,9 @@ const saveProfile = async () => {
       avatar_url: uploadedAvatarUrl || null,
     })
 
-    successMessage.value = 'Profil Anda berhasil diperbarui!'
+    showToast.success('Profil Anda berhasil diperbarui!')
   } catch (err: any) {
-    errorMessage.value = getCustomErrorMessage(err, 'Gagal menyimpan pembaruan profil.')
+    showToast.error(getCustomErrorMessage(err, 'Gagal menyimpan pembaruan profil.'))
   } finally {
     saving.value = false
   }
@@ -293,10 +274,12 @@ const saveProfile = async () => {
 const handleChangePassword = async () => {
   if (newPassword.value.length < 6) {
     passwordError.value = 'Kata sandi minimal 6 karakter demi keamanan akun Anda.'
+    showToast.warning(passwordError.value)
     return
   }
   if (newPassword.value !== confirmNewPassword.value) {
     passwordError.value = 'Konfirmasi kata sandi baru tidak cocok.'
+    showToast.warning(passwordError.value)
     return
   }
 
@@ -307,9 +290,10 @@ const handleChangePassword = async () => {
     isChangePasswordModalOpen.value = false
     newPassword.value = ''
     confirmNewPassword.value = ''
-    successMessage.value = 'Kata sandi berhasil diperbarui.'
+    showToast.success('Kata sandi akun Anda berhasil diperbarui!')
   } catch (err: any) {
     passwordError.value = getCustomErrorMessage(err, 'Gagal memperbarui kata sandi. Silakan coba kembali.')
+    showToast.error(passwordError.value)
   } finally {
     updatingPassword.value = false
   }

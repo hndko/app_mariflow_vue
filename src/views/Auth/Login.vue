@@ -136,6 +136,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { showToast } from '@/composables/useAlert'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -152,6 +153,7 @@ const errorMessage = ref('')
 const handleLogin = async () => {
   if (!email.value || !password.value) {
     errorMessage.value = 'Mohon lengkapi email dan kata sandi.'
+    showToast.warning(errorMessage.value)
     return
   }
 
@@ -159,9 +161,11 @@ const handleLogin = async () => {
   errorMessage.value = ''
   try {
     await authStore.login(email.value, password.value)
+    showToast.success('Selamat datang kembali di MariFlow!')
     router.push('/dashboard')
   } catch (err: any) {
     errorMessage.value = err.message || 'Email atau kata sandi tidak sesuai. Silakan coba lagi.'
+    showToast.error(errorMessage.value)
   } finally {
     loading.value = false
   }

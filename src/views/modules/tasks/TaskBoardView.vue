@@ -458,7 +458,7 @@
                   <button
                     type="button"
                     class="text-error-500 hover:text-error-700"
-                    @click="taskStore.deleteAttachment(att.id, att.file_path)"
+                    @click="handleDeleteAttachment(att.id, att.file_path, att.file_name)"
                   >
                     Hapus
                   </button>
@@ -525,7 +525,7 @@
         <BaseButton
           variant="danger"
           size="sm"
-          @click="isDeleteConfirmModalOpen = true"
+          @click="confirmDeleteTask"
         >
           <template #startIcon>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -539,40 +539,6 @@
         </BaseButton>
       </template>
     </BaseModal>
-
-    <!-- Delete Task Confirmation Modal -->
-    <BaseModal
-      :is-open="isDeleteConfirmModalOpen"
-      title="Hapus Tugas"
-      @close="isDeleteConfirmModalOpen = false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-600 dark:text-gray-300">
-          Apakah Anda yakin ingin menghapus tugas <strong>"{{ selectedTask?.title }}"</strong>?
-        </p>
-        <p class="text-xs text-error-600 dark:text-error-400">
-          Seluruh lampiran berkas dan komentar pada tugas ini akan dihapus secara permanen.
-        </p>
-      </div>
-
-      <template #footer>
-        <BaseButton variant="outline" @click="isDeleteConfirmModalOpen = false">
-          Batal
-        </BaseButton>
-        <BaseButton
-          variant="danger"
-          :loading="deletingTask"
-          @click="executeDeleteTask"
-        >
-          <template #startIcon>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </template>
-          Ya, Hapus Tugas
-        </BaseButton>
-      </template>
-    </BaseModal>
   </div>
 </template>
 
@@ -582,6 +548,7 @@ import { useTaskStore } from '@/stores/task'
 import { useProjectStore } from '@/stores/project'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useDebounce } from '@/composables/useDebounce'
+import { showToast, showConfirm } from '@/composables/useAlert'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseSelect from '@/components/common/BaseSelect.vue'
 import BaseTextarea from '@/components/common/BaseTextarea.vue'
@@ -617,8 +584,6 @@ const createError = ref('')
 const isDetailModalOpen = ref(false)
 const selectedTask = ref<Task | null>(null)
 const newCommentText = ref('')
-const isDeleteConfirmModalOpen = ref(false)
-const deletingTask = ref(false)
 
 const priorityOptions = [
   { value: 'low', label: 'Rendah (Low)' },
@@ -698,6 +663,7 @@ const formatDate = (isoStr: string | null) => {
   return new Date(isoStr).toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'short',
+    year: 'numeric',
   })
 }
 
@@ -714,9 +680,10 @@ const onDragStart = (task: Task) => {
   draggedTask.value = task
 }
 
-const onDropTask = (_event: DragEvent, targetStatus: TaskStatus) => {
+const onDropTask = async (_event: DragEvent, targetStatus: TaskStatus) => {
   if (draggedTask.value && draggedTask.value.status !== targetStatus) {
-    taskStore.updateStatus(draggedTask.value.id, targetStatus)
+    await taskStore.updateStatus(draggedTask.value.id, targetStatus)
+    showToast.info(`Status tugas dipindahkan ke "${targetStatus.replace('_', ' ').toUpperCase()}"`)
   }
   draggedTask.value = null
 }
@@ -753,9 +720,11 @@ const handleCreateTask = async () => {
       assigned_to: formAssignedTo.value || null,
       due_date: formDueDate.value || null,
     })
+    showToast.success('Tugas baru berhasil ditambahkan!')
     isCreateModalOpen.value = false
   } catch (err: any) {
     createError.value = err.message || 'Gagal membuat tugas baru.'
+    showToast.error(createError.value)
   } finally {
     submitting.value = false
   }
@@ -770,32 +739,72 @@ const openTaskDetailModal = async (task: Task) => {
 const onDetailStatusChange = (val: string | number) => {
   if (selectedTask.value) {
     taskStore.updateStatus(selectedTask.value.id, val as TaskStatus)
+    showToast.info('Status tugas diperbarui.')
   }
 }
 
 const handleAddComment = async () => {
   if (!newCommentText.value.trim()) return
-  await taskStore.addComment(newCommentText.value)
-  newCommentText.value = ''
+  try {
+    await taskStore.addComment(newCommentText.value)
+    showToast.success('Komentar berhasil dikirim!')
+    newCommentText.value = ''
+  } catch (err: any) {
+    showToast.error('Gagal mengirim komentar.')
+  }
 }
 
 const onAttachmentAdded = async (fileItem: UploadFileItem) => {
   if (fileItem.rawFile) {
-    await taskStore.uploadAttachment(fileItem.rawFile)
+    try {
+      await taskStore.uploadAttachment(fileItem.rawFile)
+      showToast.success(`Berkas "${fileItem.name}" berhasil diunggah!`)
+    } catch (err: any) {
+      showToast.error('Gagal mengunggah berkas.')
+    }
   }
 }
 
-const executeDeleteTask = async () => {
+const handleDeleteAttachment = async (attId: string, filePath: string, fileName: string) => {
+  const confirmed = await showConfirm({
+    title: 'Hapus Berkas Lampiran?',
+    text: `Apakah Anda yakin ingin menghapus "${fileName}"?`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    isDanger: true,
+  })
+
+  if (confirmed) {
+    try {
+      await taskStore.deleteAttachment(attId, filePath)
+      showToast.success(`Berkas "${fileName}" berhasil dihapus.`)
+    } catch (err: any) {
+      showToast.error('Gagal menghapus berkas lampiran.')
+    }
+  }
+}
+
+const confirmDeleteTask = async () => {
   if (!selectedTask.value) return
-  deletingTask.value = true
-  try {
-    await taskStore.deleteTask(selectedTask.value.id)
-    isDeleteConfirmModalOpen.value = false
-    isDetailModalOpen.value = false
-  } catch (err: any) {
-    console.error('Delete task failed:', err)
-  } finally {
-    deletingTask.value = false
+  const taskTitle = selectedTask.value.title
+
+  const confirmed = await showConfirm({
+    title: 'Hapus Tugas?',
+    text: `Apakah Anda yakin ingin menghapus tugas "${taskTitle}"? Seluruh komentar dan lampiran di dalamnya akan dihapus secara permanen.`,
+    confirmText: 'Ya, Hapus Tugas',
+    cancelText: 'Batal',
+    isDanger: true,
+  })
+
+  if (confirmed) {
+    try {
+      await taskStore.deleteTask(selectedTask.value.id)
+      isDetailModalOpen.value = false
+      showToast.success(`Tugas "${taskTitle}" berhasil dihapus.`)
+    } catch (err: any) {
+      console.error('Delete task failed:', err)
+      showToast.error('Gagal menghapus tugas.')
+    }
   }
 }
 </script>

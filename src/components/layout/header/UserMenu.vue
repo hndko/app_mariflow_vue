@@ -79,6 +79,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { showToast, showConfirm } from '@/composables/useAlert'
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 
 const router = useRouter()
@@ -97,8 +98,19 @@ const closeDropdown = () => {
 
 const handleLogout = async () => {
   closeDropdown()
-  await authStore.logout()
-  router.push('/login')
+  const confirmed = await showConfirm({
+    title: 'Konfirmasi Keluar',
+    text: 'Apakah Anda yakin ingin keluar dari akun MariFlow?',
+    confirmText: 'Ya, Keluar',
+    cancelText: 'Batal',
+    isDanger: false,
+  })
+
+  if (confirmed) {
+    await authStore.logout()
+    showToast.info('Anda telah berhasil keluar dari akun.')
+    router.push('/login')
+  }
 }
 
 const handleClickOutside = (event: MouseEvent) => {

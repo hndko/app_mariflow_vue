@@ -88,6 +88,7 @@
 import { ref } from 'vue'
 import { authService } from '@/services/auth/auth.service'
 import { getCustomErrorMessage } from '@/utils/errorHandler'
+import { showToast } from '@/composables/useAlert'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -97,15 +98,20 @@ const successMessage = ref('')
 const errorMessage = ref('')
 
 const handleResetRequest = async () => {
-  if (!email.value) return
+  if (!email.value) {
+    showToast.warning('Mohon masukkan alamat email Anda.')
+    return
+  }
   loading.value = true
   errorMessage.value = ''
   successMessage.value = ''
   try {
     await authService.resetPasswordForEmail(email.value)
     successMessage.value = 'Instruksi pemulihan telah dikirim ke email Anda. Silakan periksa kotak masuk atau spam.'
+    showToast.success('Tautan pemulihan kata sandi berhasil dikirim!')
   } catch (err: any) {
     errorMessage.value = getCustomErrorMessage(err, 'Gagal mengirim email reset kata sandi. Silakan periksa kembali email Anda.')
+    showToast.error(errorMessage.value)
   } finally {
     loading.value = false
   }

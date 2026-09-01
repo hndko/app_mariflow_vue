@@ -5,6 +5,7 @@ import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import 'jsvectormap/dist/jsvectormap.css'
 import 'flatpickr/dist/flatpickr.css'
+import 'sweetalert2/dist/sweetalert2.min.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

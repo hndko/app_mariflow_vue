@@ -196,39 +196,6 @@
         </BaseButton>
       </template>
     </BaseModal>
-
-    <!-- Delete Confirmation Modal -->
-    <BaseModal
-      :is-open="isDeleteModalOpen"
-      title="Hapus Workspace"
-      max-width="sm"
-      @close="isDeleteModalOpen = false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-600 dark:text-gray-300">
-          Apakah Anda yakin ingin menghapus workspace <strong>{{ targetDeleteWs?.name }}</strong>? Seluruh data proyek, tugas, dan lampiran di dalamnya akan dihapus secara permanen.
-        </p>
-      </div>
-
-      <template #footer>
-        <BaseButton variant="outline" size="sm" @click="isDeleteModalOpen = false">
-          Batal
-        </BaseButton>
-        <BaseButton
-          variant="danger"
-          size="sm"
-          :loading="deleting"
-          @click="handleDeleteWorkspace"
-        >
-          <template #startIcon>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </template>
-          Hapus Permanen
-        </BaseButton>
-      </template>
-    </BaseModal>
   </div>
 </template>
 
@@ -237,6 +204,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useDebounce } from '@/composables/useDebounce'
+import { showToast, showConfirm } from '@/composables/useAlert'
 import BaseTable, { type TableColumn } from '@/components/common/BaseTable.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseTextarea from '@/components/common/BaseTextarea.vue'
@@ -257,10 +225,6 @@ const formName = ref('')
 const formDescription = ref('')
 const submitting = ref(false)
 const modalError = ref('')
-
-const isDeleteModalOpen = ref(false)
-const targetDeleteWs = ref<Workspace | null>(null)
-const deleting = ref(false)
 
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nama Workspace' },
@@ -298,6 +262,7 @@ const formatDate = (isoStr: string) => {
 
 const selectWorkspace = (ws: Workspace) => {
   workspaceStore.switchWorkspace(ws)
+  showToast.info(`Beralih ke workspace "${ws.name}"`)
   router.push('/dashboard')
 }
 
@@ -333,33 +298,38 @@ const handleSaveWorkspace = async () => {
         workspaceStore.workspaces[idx].name = formName.value
         workspaceStore.workspaces[idx].description = formDescription.value
       }
+      showToast.success('Workspace berhasil diperbarui!')
     } else {
       // Create
       await workspaceStore.createWorkspace(formName.value, formDescription.value)
+      showToast.success('Workspace baru berhasil dibuat!')
     }
     isModalOpen.value = false
   } catch (err: any) {
     modalError.value = err.message || 'Gagal menyimpan workspace.'
+    showToast.error(modalError.value)
   } finally {
     submitting.value = false
   }
 }
 
-const confirmDelete = (ws: Workspace) => {
-  targetDeleteWs.value = ws
-  isDeleteModalOpen.value = true
-}
+const confirmDelete = async (ws: Workspace) => {
+  const confirmed = await showConfirm({
+    title: 'Hapus Workspace?',
+    text: `Apakah Anda yakin ingin menghapus workspace "${ws.name}"? Seluruh data proyek, tugas, dan lampiran di dalamnya akan dihapus secara permanen.`,
+    confirmText: 'Ya, Hapus Permanen',
+    cancelText: 'Batal',
+    isDanger: true,
+  })
 
-const handleDeleteWorkspace = async () => {
-  if (!targetDeleteWs.value) return
-  deleting.value = true
-  try {
-    workspaceStore.workspaces = workspaceStore.workspaces.filter((w) => w.id !== targetDeleteWs.value?.id)
-    isDeleteModalOpen.value = false
-  } catch (err: any) {
-    console.error('Delete error:', err)
-  } finally {
-    deleting.value = false
+  if (confirmed) {
+    try {
+      workspaceStore.workspaces = workspaceStore.workspaces.filter((w) => w.id !== ws.id)
+      showToast.success(`Workspace "${ws.name}" berhasil dihapus.`)
+    } catch (err: any) {
+      console.error('Delete error:', err)
+      showToast.error('Gagal menghapus workspace.')
+    }
   }
 }
 </script>

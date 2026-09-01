@@ -137,6 +137,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { showToast } from '@/composables/useAlert'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -154,10 +155,12 @@ const errorMessage = ref('')
 const handleRegister = async () => {
   if (!agreeTerms.value) {
     errorMessage.value = 'Anda harus menyetujui Syarat & Ketentuan terlebih dahulu.'
+    showToast.warning(errorMessage.value)
     return
   }
   if (password.value.length < 6) {
     errorMessage.value = 'Kata sandi minimal 6 karakter.'
+    showToast.warning(errorMessage.value)
     return
   }
 
@@ -165,9 +168,11 @@ const handleRegister = async () => {
   errorMessage.value = ''
   try {
     await authStore.register(email.value, password.value, fullName.value)
+    showToast.success('Pendaftaran akun berhasil! Selamat datang di MariFlow.')
     router.push('/dashboard')
   } catch (err: any) {
     errorMessage.value = err.message || 'Gagal mendaftar. Silakan coba kembali.'
+    showToast.error(errorMessage.value)
   } finally {
     loading.value = false
   }

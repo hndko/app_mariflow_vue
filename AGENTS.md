@@ -83,6 +83,11 @@ Struktur direktori wajib terorganisir secara modular dan simetris:
 - Setiap tabel data wajib memiliki kolom penomoran otomatis dengan header **`#`** atau **`No`**.
 - Dilengkapi dengan skeleton loading state, empty state yang komunikatif, dan pagination jika data melebihi limit.
 
+### 4.5 Standar Alert & Konfirmasi (Toast Alert & SweetAlert)
+- **Alert Biasa / Notifikasi Sistem**: Wajib menggunakan **Toast Alert** (`showToast.success()`, `showToast.error()`, `showToast.warning()`, `showToast.info()`) mengambang di pojok layar dengan auto-dismiss, progress bar, dan dukungan tema terang/gelap.
+- **Konfirmasi Aksi (Confirm Dialog)**: Wajib menggunakan **SweetAlert Modal** (`showConfirm()`) dengan ikon visual modern, teks penjelasan tegas, dan tombol aksi terstandarisasi.
+- **Larangan**: Dilarang keras menggunakan `alert()`, `confirm()`, atau banner statis yang tidak seragam.
+
 ---
 
 ## 🛡️ 5. Keamanan, Otorisasi & PostgreSQL RLS
