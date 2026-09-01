@@ -139,6 +139,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [35.2 Anatomi Penggunaan Disk: Database, WAL, & System](#352--anatomi-penggunaan-disk-database-wal--system)
     - [35.3 Read Replicas: Penskalaan Horisontal (PRO TIER)](#353--read-replicas-penskalaan-horisontal--pro-tier)
     - [35.4 Pilihan Compute Sizing: FREE Tier vs PRO Tier](#354--pilihan-compute-sizing-free-tier-vs-pro-tier)
+36. [Bedah Lengkap Project Settings: Integrations (GitHub GitOps, Vercel, & Database Branching)](#-36-bedah-lengkap-project-settings-integrations-github-gitops-vercel--database-branching)
+    - [36.1 GitHub Integration: Otomasi Migrasi Database (GitOps)](#361--github-integration-otomasi-migrasi-database-gitops)
+    - [36.2 Database Branching: FREE Tier vs PRO Tier](#362--database-branching-free-tier-vs-pro-tier)
+    - [36.3 Vercel Integration (Auto Environment Sync)](#363--vercel-integration-auto-environment-sync)
+    - [36.4 AWS PrivateLink (Team & Enterprise Plans)](#364--aws-privatelink-team--enterprise-plans-)
 
 ---
 
@@ -2472,7 +2477,69 @@ Di bagian bawah dashboard, kuota disk database Free Tier (500 MB) terbagi menjad
 
 ---
 
+## 🔗🚀 36. Bedah Lengkap Project Settings: Integrations (GitHub GitOps, Vercel, & Database Branching)
+
+Menu **Settings ➔ Integrations** (di bawah kelompok `CONFIGURATION`) mengelola jembatan integrasi *Continuous Integration / Continuous Deployment (CI/CD)* antara repository kode MariFlow dengan infrastruktur cloud Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🔗🚀 SUPABASE PROJECT SETTINGS INTEGRATIONS ARCHITECTURE                                               │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🐙 1. GITHUB INTEGRATION (GITOPS AUTOMATION):                                                          │
+│  - Repository Connected : hndko/app_mariflow_vue                                                       │
+│  - Working Directory    : . (Mendeteksi folder supabase/migrations/)                                   │
+│  - Deploy to Production : [🔘 ON] Sync otomatis file migrasi SQL saat merge ke branch 'main'.          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌿 2. DATABASE BRANCHING (FREE TIER vs PRO TIER):                                                      │
+│  - Free Tier            : 1 Production Branch ('main').                                                │
+│  - 🔒 PRO TIER          : Ephemeral Preview Branches otomatis untuk setiap Pull Request (PR).          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ▲ 3. VERCEL INTEGRATION:                                                                               │
+│  - Auto-inject & sinkronisasi otomatis VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY ke project Vercel.    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🏢 4. AWS PRIVATELINK [🔒 TEAM & ENTERPRISE PLAN]:                                                     │
+│  - Koneksi privat langsung antara AWS VPC perusahaan dengan database Supabase tanpa internet publik.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 36.1 🐙 GitHub Integration: Otomasi Migrasi Database (*GitOps*)
+
+Dengan menghubungkan repository **`hndko/app_mariflow_vue`** ke Supabase:
+
+1. **`Working directory: .`**:
+   - Supabase secara otomatis mengenali folder `supabase/migrations/` di repository proyek.
+2. **`Deploy to production` (🔘 Aktif pada branch `main`)**:
+   - **Alur Otomatis**: Setiap kali Anda melakukan `git push` atau merge ke branch `main`, Supabase akan secara otomatis mendeteksi dan mengeksekusi file SQL migrasi baru ke database PostgreSQL cloud tanpa perlu membuka SQL Editor manual.
+
+---
+
+### 36.2 🌿 Database Branching: FREE Tier vs PRO Tier
+
+- **Free Tier (Akun MariFlow Saat Ini)**:
+  - Mengelola 1 lingkungan database produksi utama yang terhubung ke branch `main`.
+- **Pro Tier ($25/bulan) 🔒**:
+  - Membuka fitur **`Database Branching`**: Setiap kali developer membuat branch fitur baru atau Pull Request (PR) di GitHub, Supabase akan membuat salinan database *preview* sementara (*ephemeral database branch*) lengkap dengan skema dan datanya.
+  - Setelah PR disetujui dan di-merge, database preview akan otomatis dihapus.
+
+---
+
+### 36.3 ▲ Vercel Integration (*Auto Environment Sync*)
+
+- Menghubungkan deployment frontend Vue 3 di Vercel dengan database Supabase.
+- Setiap kali ada rotasi API keys atau pembaruan konfigurasi proyek, Vercel Environment Variables (`VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`) akan **otomatis tersinkronisasi**.
+
+---
+
+### 36.4 🏢 AWS PrivateLink (Team & Enterprise Plans 🔒)
+
+- Fitur keamanan tingkat lanjut untuk perusahaan enterprise yang mewajibkan seluruh komunikasi data antara backend server AWS VPC dengan database PostgreSQL Supabase berjalan melalui jalur kabel fiber privat AWS (*Private Endpoint*), tanpa pernah terpapar ke jaringan internet publik.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
