@@ -123,6 +123,25 @@ BEGIN
 END $$;
 
 -- ------------------------------------------------------------------------------
+-- 1.5 PASTIKAN ENUM user_role & KOLOM role ADA DI PROFILES
+-- ------------------------------------------------------------------------------
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE public.user_role AS ENUM ('superadmin', 'owner', 'admin', 'member', 'viewer');
+    ELSE
+        BEGIN
+            ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'superadmin' BEFORE 'owner';
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END;
+    END IF;
+END $$;
+
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS role public.user_role DEFAULT 'member'::public.user_role;
+
+-- ------------------------------------------------------------------------------
 -- 2. SINKRONISASI PROFILES
 -- ------------------------------------------------------------------------------
 INSERT INTO public.profiles (id, full_name, avatar_url, email, role, created_at, updated_at)

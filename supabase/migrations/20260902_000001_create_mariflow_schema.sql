@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 -- 1. ENUMS
+CREATE TYPE user_role AS ENUM ('superadmin', 'owner', 'admin', 'member', 'viewer');
 CREATE TYPE workspace_role AS ENUM ('owner', 'admin', 'member', 'viewer');
 CREATE TYPE project_status AS ENUM ('planning', 'active', 'completed', 'archived');
 CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'review', 'completed', 'cancelled');
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     full_name TEXT,
     avatar_url TEXT,
     email TEXT NOT NULL,
+    role user_role DEFAULT 'member'::user_role NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
