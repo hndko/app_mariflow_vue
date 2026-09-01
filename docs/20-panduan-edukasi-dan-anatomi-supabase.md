@@ -128,6 +128,12 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [33.2 Fitur Komunitas Populer: pg_cron & pgmq](#332--fitur-komunitas-populer-pg_cron--pgmq)
     - [33.3 Observability & Platform Deployment Sync](#333--observability--platform-deployment-sync)
     - [33.4 Foreign Data Wrappers (FDW Integrations)](#334--foreign-data-wrappers-fdw-integrations)
+34. [Bedah Lengkap Project Settings: General (Lifecycle, Engine Versions, & Custom Domains)](#-34-bedah-lengkap-project-settings-general-lifecycle-engine-versions--custom-domains)
+    - [34.1 Metadata & Identitas Proyek MariFlow](#341--metadata--identitas-proyek-mariflow)
+    - [34.2 Manajemen Siklus Hidup (Project Availability: Restart & Pause)](#342--manajemen-siklus-hidup-project-availability-restart--pause)
+    - [34.3 Versi Mesin Layanan (Core Service Versions)](#343--versi-mesin-layanan-core-service-versions)
+    - [34.4 Custom Domains: FREE Tier vs PRO Tier](#344--custom-domains-free-tier-vs-pro-tier)
+    - [34.5 Transfer & Delete Project (Disaster Prevention)](#345--transfer--delete-project-disaster-prevention)
 
 ---
 
@@ -2298,7 +2304,93 @@ WHERE status = 'active';
 
 ---
 
+## ⚙️🏢 34. Bedah Lengkap Project Settings: General (Lifecycle, Engine Versions, & Custom Domains)
+
+Menu **Settings ➔ General** (icon ⚙️ pada sidebar bawah) adalah pusat kendali konfigurasi identitas, siklus hidup (*lifecycle*), versi mesin infrastruktur, dan kepemilikan proyek MariFlow.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚙️🏢 PROJECT GENERAL SETTINGS ARCHITECTURE                                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🏷️ 1. GENERAL METADATA:                                                                                │
+│  - Project Name   : mariflow-dev (Nama proyek tampilan di dashboard).                                  │
+│  - Project ID     : rtazqheauyiujjteburi (Reference string 20 karakter di URL API & Connection String). │
+│  - Project Region : ap-southeast-1 (Singapore / Latensi terendah untuk pengguna Indonesia).           │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔄 2. PROJECT AVAILABILITY (LIFECYCLE MANAGEMENT):                                                     │
+│  - Restart Project : Me-reboot container PostgreSQL & Auth/API engine saat maintenance.               │
+│  - Pause Project   : Menidurkan proyek. (Free Tier otomatis pause jika tidak aktif selama 7 hari).    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🏗️ 3. CORE SERVICE VERSIONS:                                                                          │
+│  - PostgreSQL Engine : 17.6.1 [LATEST] (Mesin SQL basis data relasional tercanggih).                  │
+│  - PostgREST Engine  : 14.5 (Pembangkit REST API instan).                                              │
+│  - Auth Engine       : 2.196.0 (Server otentikasi GoTrue).                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 4. CUSTOM DOMAINS (BRANDED EXPERIENCE):                                                             │
+│  - Free Tier Default : https://rtazqheauyiujjteburi.supabase.co (100% GRATIS).                         │
+│  - 🔒 PRO TIER ADD-ON: Menggunakan domain kustom sendiri (e.g. api.mariflow.com) seharga $10/bulan.    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚨 5. PROJECT TRANSFER & DISASTER RECOVERY:                                                            │
+│  - Transfer Project : Pindahkan proyek antar Organization anggota tim.                                 │
+│  - Delete Project   : ⚠️ Hapus permanen seluruh database, skema, tabel, storage, dan pengguna!        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 34.1 🏷️ Metadata & Identitas Proyek MariFlow
+
+1. **`Project Name`**: Nama proyek tampilan di dashboard (`mariflow-dev`).
+2. **`Project ID (Reference ID)`**: 
+   - ID alfanumerik unik (`rtazqheauyiujjteburi`).
+   - String ini menjadi subdomain default untuk seluruh API, Storage, dan Realtime endpoint: `https://rtazqheauyiujjteburi.supabase.co`.
+3. **`Project Region`**: 
+   - `ap-southeast-1` (Singapore). Lokasi server fisik AWS terdekat dengan Indonesia untuk menjamin kecepatan akses (*ping* < 30ms).
+
+---
+
+### 34.2 🔄 Manajemen Siklus Hidup (*Project Availability: Restart & Pause*)
+
+1. **`Restart Project`**:
+   - Me-reboot ulang container PostgreSQL dan seluruh background service tanpa menghilangkan data sedikit pun. Berguna jika koneksi database mengalami deadlock atau setelah perubahan konfigurasi ekstensi.
+2. **`Pause Project` & Kebijakan Free Tier Auto-Pause**:
+   - **Fitur Pause**: Menghentikan sementara komputasi server.
+   - **Kebijakan Free Tier**: Pada paket Free, jika proyek tidak menerima request API selama 7 hari berturut-turut, Supabase akan secara otomatis menidurkan proyek (*Auto-pause*).
+   - **Cara Membangunkan (*Unpause*)**: Cukup buka dashboard web Supabase dan klik tombol **`Restore project`**. Proyek akan aktif kembali dalam 1-2 menit dengan seluruh data utuh 100%.
+
+---
+
+### 34.3 🏗️ Versi Mesin Layanan (*Core Service Versions*)
+
+Dashboard menampilkan transparansi versi teknologi open-source yang mendasari proyek:
+
+- **`Postgres version: 17.6.1` [LATEST]**: Versi PostgreSQL terbaru dengan performa indexing B-Tree, JSONB query, dan memori yang sangat efisien.
+- **`PostgREST version: 14.5`**: Server HTTP otomatis yang menerjemahkan skema SQL menjadi REST API berkecepatan tinggi.
+- **`Auth version: 2.196.0`**: Server otentikasi GoTrue yang mengelola token JWT, refresh token, dan hashing password argon2/bcrypt.
+
+---
+
+### 34.4 🌐 Custom Domains: FREE Tier vs PRO Tier
+
+- **Free Tier (Akun MariFlow Saat Ini)**:
+  - Menggunakan endpoint resmi: `https://rtazqheauyiujjteburi.supabase.co`.
+  - Sangat aman, didukung SSL/TLS otomatis dari Supabase, dan ideal untuk aplikasi SaaS modern.
+- **Pro Tier ($25/bulan) + Add-on ($10/bulan) 🔒**:
+  - Memungkinkan Anda menghubungkan domain sendiri seperti `https://api.mariflow.com` atau `https://auth.mariflow.com` agar nama brand terlihat 100% independen bagi pengguna enterprise (*Branded Experience*).
+
+---
+
+### 34.5 🚨 Transfer & Delete Project (*Disaster Prevention*)
+
+1. **`Transfer project`**:
+   - Memindahkan kepemilikan proyek ke Organization lain (misal: memindahkan proyek dari akun personal developer ke akun Organization perusahaan Mari Partner).
+2. **`Delete project` (Tindakan Destruktif)**:
+   - Menghapus total seluruh database PostgreSQL, tabel, storage bucket, dan daftar pengguna secara permanen dari server cloud.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
