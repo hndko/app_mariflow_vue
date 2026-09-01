@@ -28,6 +28,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
 11. [Matriks Komparasi: FREE Tier vs PRO Tier (Panduan Batasan & Skalabilitas)](#-11-matriks-komparasi-free-tier-vs-pro-tier-panduan-batasan--skalabilitas)
     - [11.1 Rincian Fitur Bebas Pakai di FREE Tier](#111-rincian-fitur-bebas-pakai-di-free-tier-cukup-untuk-pengembangan--mvp)
     - [11.2 Daftar Fitur Eksklusif PRO TIER (Terkunci)](#112-daftar-fitur-eksklusif-pro-tier--wajib-diperhatikan)
+12. [Bedah Lengkap Menu SQL Editor (Query Builder, AI Assistant & Chart Visualizer)](#-12-bedah-lengkap-menu-sql-editor-query-builder-ai-assistant--chart-visualizer)
+    - [12.1 Anatomi Panel Kiri (Snippet Manager & References)](#121-anatomi-panel-kiri-snippet-manager--references)
+    - [12.2 Fitur Unggulan Editor & Supabase AI (Ctrl+Shift+K)](#122-fitur-unggulan-editor--supabase-ai-ctrlshiftk)
+    - [12.3 Panel Hasil Eksekusi: Tab Results & Chart](#123-panel-hasil-eksekusi-tab-results--chart)
 
 ---
 
@@ -452,7 +456,85 @@ Jika Anda melihat tombol atau opsi berikut di dashboard Supabase, fitur tersebut
 
 ---
 
+## 💻 12. Bedah Lengkap Menu SQL Editor (Query Builder, AI Assistant & Chart Visualizer)
+
+Menu **SQL Editor** (icon `>_` pada sidebar) adalah pusat eksekusi perintah DDL (*Data Definition Language*) dan DML (*Data Manipulation Language*) PostgreSQL langsung di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 💻 SQL Editor   [+ New]   [🔍 Search queries...]           [♡] [≡] [🗄️ Database ▼] [Save Ctrl+S] [▶ Run Ctrl↵]│
+├──────────────────────────┬─────────────────────────────────────────────────────────────────────────────┤
+│ 📁 SNIPPET ORGANIZER:    │ 1  -- Hit CTRL+SHIFT+K to generate query with Supabase AI                  │
+│                          │ 2  SELECT                                                                   │
+│  > SHARED (Team Snippets)│ 3      w.name AS workspace_name,                                            │
+│  > FAVORITES (Starred)   │ 4      COUNT(t.id) AS total_tasks,                                          │
+│  v PRIVATE               │ 5      COUNT(t.id) FILTER (WHERE t.status = 'completed') AS completed_tasks │
+│    - 01_schema_ddl.sql   │ 6  FROM public.workspaces w                                                 │
+│    - 02_rpc_analytics.sql│ 7  LEFT JOIN public.tasks t ON t.workspace_id = w.id                        │
+│    - master_seed.sql     │ 8  GROUP BY w.id, w.name;                                                   │
+│  > LOGS (Query History)  │                                                                             │
+│                          ├─────────────────────────────────────────────────────────────────────────────┤
+│ 📚 REFERENCE:            │ [📊 Results]  [📈 Chart]                                                    │
+│  - Templates             ├──────────────────────────────────────────┬─────────────┬────────────────────┤
+│  - Examples              │ workspace_name                           │ total_tasks │ completed_tasks    │
+│                          ├──────────────────────────────────────────┼─────────────┼────────────────────┤
+│  [View running queries]  │ Mari Partner Main Hub                    │ 11          │ 3                  │
+│                          │ Client Projects & Marketing              │ 4           │ 2                  │
+└──────────────────────────┴──────────────────────────────────────────┴─────────────┴────────────────────┘
+```
+
+---
+
+### 12.1 Anatomi Panel Kiri (*Snippet Manager & References*)
+
+1. **`SHARED` (Team Snippets)**:
+   - Folder snippet SQL yang dapat dibaca dan dieksekusi oleh seluruh anggota tim di organisasi `Mari Partner`.
+2. **`FAVORITES` (Starred Queries)**:
+   - Tempat menyimpan query SQL yang sering Anda jalankan untuk pemeliharaan rutin atau audit metrik.
+3. **`PRIVATE`**:
+   - Workspace query pribadi akun Anda. Seluruh query yang Anda ketik akan **otomatis tersimpan (*auto-saved*)**.
+4. **`LOGS` (Riwayat Eksekusi)**:
+   - Menyimpan riwayat query yang pernah Anda jalankan sebelumnya, sangat berguna jika Anda ingin mengulang atau menelusuri query yang belum sempat di-bookmark.
+5. **`REFERENCE` (`Templates` & `Examples`)**:
+   - Kumpulan template SQL resmi bawaan Supabase:
+     - *Quickstart RLS Policies* (Contoh kebijakan multi-tenant).
+     - *Database Webhooks* (Trigger HTTP POST saat ada perubahan data).
+     - *Stripe Billing Sync* (Skema langganan SaaS).
+     - *Cron Scheduled Jobs* (`pg_cron` otomatisasi berkala).
+6. **Tombol `View running queries` (`pg_stat_activity`)**:
+   - Menampilkan daftar transaksi SQL yang sedang berjalan di PostgreSQL. Jika terjadi query berat yang macet (*stuck*), Anda dapat membatalkannya (*terminate/cancel backend*) dari modal ini.
+
+---
+
+### 12.2 Fitur Unggulan Editor & Supabase AI (`Ctrl+Shift+K`)
+
+1. **Supabase AI Assistant (`Ctrl + Shift + K`)**:
+   - Asisten kecerdasan buatan bawaan Supabase. Anda cukup mengetikkan prompt bahasa manusia (contoh: *"Buatkan query untuk menghitung persentase penyelesaian tugas per proyek"*), dan AI akan otomatis mengonversinya menjadi sintaks SQL PostgreSQL yang optimal.
+2. **Target Connection Selector (`Database ▼`)**:
+   - Memilih jalur koneksi eksekusi query:
+     - **Direct Connection**: Koneksi langsung ke engine PostgreSQL (Port 5432).
+     - **Connection Pooler (Supavisor)**: Koneksi melalui Transaction Pooler (Port 6543) yang hemat memori untuk query concurrent tinggi.
+3. **Shortcut Eksekusi**:
+   - **`Ctrl + ↵` (Windows)** / **`Cmd + ↵` (Mac)**: Menjalankan seluruh query atau blok teks yang sedang di-blok (*highlighted*).
+   - **`Ctrl + S`**: Menyimpan query tab ke Snippet Organizer.
+
+---
+
+### 12.3 Panel Hasil Eksekusi: Tab `Results` & `Chart`
+
+Supabase menyediakan dua tab visualisasi hasil query:
+
+1. **Tab `Results` (Data Grid)**:
+   - Menampilkan baris data dalam format tabel interaktif.
+   - Dilengkapi tombol **Copy as CSV / JSON** untuk kemudahan ekspor data analisis.
+   - Menampilkan durasi eksekusi query (contoh: `Success. 11 rows returned in 18ms`).
+2. **Tab `Chart` (Visualisasi Grafik Instan)**:
+   - **Fitur Cerdas**: Supabase secara otomatis dapat mengubah hasil query numerik menjadi grafik visual (**Bar Chart**, **Line Chart**, atau **Area Chart**) langsung di browser tanpa perlu menginstal aplikasi BI eksternal!
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
