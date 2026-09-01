@@ -52,6 +52,12 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [16.2 Policies (Row Level Security Visual Manager)](#162-policies-row-level-security-visual-manager)
     - [16.3 Database Roles (Hierarki Peran PostgreSQL & Arsitektur Keamanan)](#163-database-roles-hierarki-peran-postgresql--arsitektur-keamanan)
     - [16.4 Anatomi Drawer "Create a new role" & Privilese Database](#164-anatomi-drawer-create-a-new-role--privilese-database)
+17. [Bedah Lengkap Database Settings (Password, Connection Pooling, SSL, & Security)](#-17-bedah-lengkap-database-settings-password-connection-pooling-ssl--security)
+    - [17.1 Database Password & Dampak Reset Password](#171-database-password--dampak-reset-password)
+    - [17.2 Connection Pooling (Supavisor): Solusi 200 Koneksi di Free Tier](#172-connection-pooling-supavisor-solusi-200-koneksi-di-free-tier)
+    - [17.3 SSL Configuration (Enkripsi Data In-Transit)](#173-ssl-configuration-enkripsi-data-in-transit)
+    - [17.4 Network Restrictions (IP Whitelist) & Network Bans](#174-network-restrictions-ip-whitelist--network-bans)
+    - [17.5 Connection Logging (log_connections & log_disconnections)](#175-connection-logging-log_connections--log_disconnections)
 
 ---
 
@@ -937,7 +943,94 @@ Saat Anda mengklik tombol **`+ Add role`**, Anda dapat membuat custom role untuk
 
 ---
 
+## ⚙️ 17. Bedah Lengkap Database Settings (Password, Connection Pooling, SSL, & Security)
+
+Menu **Database ➔ Settings** (kelompok `CONFIGURATION`) adalah panel pengaturan konektivitas, performa *connection pooling*, enkripsi SSL, dan restriksi jaringan database.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚙️ Database Settings (Connections, Security, and Network Configuration)                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 DATABASE PASSWORD:                                                                                  │
+│  - [Reset password] ──► Password tidak dapat dilihat ulang. Reset memutus koneksi aktif.              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🏊 CONNECTION POOLING (Supavisor):                                                                     │
+│  - Compute Tier (Free): Nano                                                                           │
+│  - Direct Pool Size   : 15 connections (Cluster Postgres)                                              │
+│  - Max Client Pool    : 200 clients (Concurrent Pooler Supavisor - Port 6543)                         │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔒 SSL CONFIGURATION:                                                                                  │
+│  - [🔘] Enforce SSL on incoming connections (Tolak koneksi tanpa enkripsi TLS)                         │
+│  - [⬇️ Download certificate] (prod-ca-2021.crt untuk verifikasi root CA)                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 NETWORK RESTRICTIONS & BANS:                                                                        │
+│  - Network Restrictions: Membatasi IP Whitelist yang boleh mengakses port database 5432/6543.          │
+│  - Network Bans        : Daftar IP yang diblokir otomatis akibat percobaan brute-force.                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📋 CONNECTION LOGGING:                                                                                 │
+│  - [🔘] Log connections    : Mencatat setiap koneksi baru yang berhasil.                              │
+│  - [🔘] Log disconnections : Mencatat akhir sesi beserta durasi koneksi.                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 17.1 🔑 Database Password & Dampak Reset Password
+
+- **Prinsip Keamanan**: Supabase tidak pernah menyimpan kata sandi database Anda dalam bentuk teks terbuka (*plaintext*). Sekali dibuat saat inisialisasi proyek, kata sandi tersebut tidak dapat dilihat kembali.
+- **Tombol `Reset password`**:
+  - Jika Anda lupa kata sandi database direct connection, Anda dapat meresetnya kapan saja.
+  - ⚠️ **Peringatan**: Mereset kata sandi akan langsung memutus seluruh koneksi database aktif yang sedang menggunakan kata sandi lama (misalnya koneksi aplikasi GUI DBeaver, pgAdmin, atau migrasi CLI).
+
+---
+
+### 17.2 🏊 Connection Pooling (Supavisor): Solusi 200 Koneksi di Free Tier
+
+Database PostgreSQL tradisional menggunakan model *process-based connection*, di mana setiap 1 koneksi baru memakan ~2-10 MB memori RAM. Pada serverless atau aplikasi SaaS dengan ratusan pengguna aktif, koneksi database langsung bisa cepat habis (*Connection Exhaustion / Too many clients*).
+
+Supabase menyediakan **Supavisor** — *Connection Pooler* generasi terbaru:
+
+1. **Direct Cluster Pool Size (`15 connections`)**:
+   - Jumlah koneksi langsung maksimal ke engine PostgreSQL fisik pada paket Free Tier (Compute Nano).
+   - Digunakan untuk koneksi berdurasi panjang seperti DDL migrasi skema tabel.
+2. **Max Client Connections (`200 clients`)**:
+   - Jumlah pengguna / request bersamaan yang dapat dilayani oleh Supavisor Transaction Pooler (Port 6543).
+   - **Cara Kerja**: Supavisor memegang koneksi ke klien, namun hanya meminjamkan koneksi PostgreSQL fisik selama transaksi query SQL berlangsung (dalam hitungan milidetik), lalu mengembalikannya ke *pool* agar bisa dipakai oleh pengguna lain!
+
+---
+
+### 17.3 🔒 SSL Configuration (Enkripsi Data In-Transit)
+
+1. **Toggle `Enforce SSL on incoming connections`**:
+   - Saat diaktifkan, database akan **menolak secara mutlak** seluruh koneksi plaintext tanpa enkripsi TLS/SSL. Ini mencegah penyerang di jaringan publik menyadap query data atau password database Anda (*Man-In-The-Middle attack*).
+2. **Tombol `Download certificate`**:
+   - Mengunduh sertifikat Root CA resmi Supabase (`prod-ca-2021.crt`).
+   - Digunakan saat Anda mengonfigurasi koneksi database di aplikasi eksternal (seperti DBeaver, Prisma, atau backend Node) dengan mode `sslmode=verify-full`.
+
+---
+
+### 17.4 🌐 Network Restrictions (IP Whitelist) & Network Bans
+
+1. **`Network restrictions` (`Restrict all access` / `+ Add restriction`)**:
+   - Membatasi IP address mana saja di internet yang diizinkan melakukan koneksi langsung ke port PostgreSQL 5432 / 6543.
+   - Sangat direkomendasikan untuk SaaS tahap produksi agar hanya IP server aplikasi atau VPN kantor yang boleh mengakses database langsung.
+2. **`Network bans`**:
+   - Sistem pertahanan otomatis Supabase (*Intrusion Detection System*). Jika ada IP luar yang mencoba menebak kata sandi database secara berulang-ulang (*brute-force attack*), IP tersebut akan langsung diblokir sementara di firewall dan dicatat di panel ini.
+
+---
+
+### 17.5 📋 Connection Logging (`log_connections` & `log_disconnections`)
+
+- **`Log connections`**: Mencatat stempel waktu (*timestamp*) dan detail setiap ada klien baru yang terhubung ke database.
+- **`Log disconnections`**: Mencatat saat sesi klien berakhir beserta durasi koneksi yang digunakan.
+- **Kapan Digunakan?**:
+  - Aktifkan saat Anda melakukan audit keamanan atau mendiagnosis *connection leak* (koneksi yang tidak ditutup dengan benar di kode backend).
+  - Nonaktifkan saat produksi normal agar log database tetap bersih dan tidak memakan kuota log.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
