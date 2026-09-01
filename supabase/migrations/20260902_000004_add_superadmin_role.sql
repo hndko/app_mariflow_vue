@@ -12,4 +12,4 @@ ADD COLUMN IF NOT EXISTS role public.user_role DEFAULT 'member'::public.user_rol
 -- 3. Update master account to superadmin role
 UPDATE public.profiles
 SET role = 'superadmin'::public.user_role
-WHERE email IN ('hd.doko22@gmail.com', 'budi@maripartner.com');
+WHERE email IN ('superadmin@example.com', 'hd.doko22@gmail.com');

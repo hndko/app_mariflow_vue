@@ -15,12 +15,12 @@ DECLARE
     ws_client_id   UUID := '10000000-0000-0000-0000-000000000002'::UUID;
     ws_fintech_id  UUID := '10000000-0000-0000-0000-000000000003'::UUID;
 BEGIN
-    -- Ambil User IDs dari profiles
-    SELECT id INTO superadmin_uid FROM public.profiles WHERE email = 'hd.doko22@gmail.com' LIMIT 1;
-    SELECT id INTO owner_uid FROM public.profiles WHERE email = 'budi@maripartner.com' LIMIT 1;
-    SELECT id INTO admin_uid FROM public.profiles WHERE email = 'siti@maripartner.com' LIMIT 1;
-    SELECT id INTO member_uid FROM public.profiles WHERE email = 'rian@maripartner.com' LIMIT 1;
-    SELECT id INTO viewer_uid FROM public.profiles WHERE email = 'maya@maripartner.com' LIMIT 1;
+    -- Ambil User IDs dari profiles berdasarkan email @example.com
+    SELECT id INTO superadmin_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1;
+    SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
+    SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
+    SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
+    SELECT id INTO viewer_uid FROM public.profiles WHERE email = 'viewer@example.com' LIMIT 1;
 
     -- Fallback jika user id belum ada
     IF owner_uid IS NULL THEN owner_uid := superadmin_uid; END IF;

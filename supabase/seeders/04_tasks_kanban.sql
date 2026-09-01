@@ -14,9 +14,9 @@ DECLARE
     p_landing_page UUID := '20000000-0000-0000-0000-000000000002'::UUID;
     p_payment_sys  UUID := '20000000-0000-0000-0000-000000000003'::UUID;
 BEGIN
-    SELECT id INTO owner_uid FROM public.profiles WHERE email = 'budi@maripartner.com' LIMIT 1;
-    SELECT id INTO admin_uid FROM public.profiles WHERE email = 'siti@maripartner.com' LIMIT 1;
-    SELECT id INTO member_uid FROM public.profiles WHERE email = 'rian@maripartner.com' LIMIT 1;
+    SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
+    SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
+    SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
 
     IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;

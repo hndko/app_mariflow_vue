@@ -161,12 +161,12 @@ Seluruh data awal awal demo dan pengujian tersusun modular di dalam subfolder **
 6. Terakhir, buka file **`supabase/seeders/master_seed.sql`**, salin kodenya, tempel ke SQL Editor, lalu klik **Run** untuk mengisi seluruh data awal!
 
 > [!TIP]
-> **Daftar Akun Demo Hasil Seeder**:
-> - **Superadmin**: `hd.doko22@gmail.com` | Kata Sandi: `password123`
-> - **Owner**: `budi@maripartner.com` | Kata Sandi: `password123`
-> - **Admin**: `siti@maripartner.com` | Kata Sandi: `password123`
-> - **Member**: `rian@maripartner.com` | Kata Sandi: `password123`
-> - **Viewer**: `maya@maripartner.com` | Kata Sandi: `password123`
+> **Daftar Akun Demo Hasil Seeder (Email @example.com & Kata Sandi: `password`)**:
+> - **Superadmin**: `superadmin@example.com` | Kata Sandi: `password`
+> - **Owner**: `owner@example.com` | Kata Sandi: `password`
+> - **Admin**: `admin@example.com` | Kata Sandi: `password`
+> - **Member**: `member@example.com` | Kata Sandi: `password`
+> - **Viewer**: `viewer@example.com` | Kata Sandi: `password`
 
 ---
 
