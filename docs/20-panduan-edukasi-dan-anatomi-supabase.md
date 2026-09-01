@@ -58,6 +58,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [17.3 SSL Configuration (Enkripsi Data In-Transit)](#173-ssl-configuration-enkripsi-data-in-transit)
     - [17.4 Network Restrictions (IP Whitelist) & Network Bans](#174-network-restrictions-ip-whitelist--network-bans)
     - [17.5 Connection Logging (log_connections & log_disconnections)](#175-connection-logging-log_connections--log_disconnections)
+18. [Bedah Lengkap Database Replication & Supabase Pipelines (BigQuery Analytics & Read Replicas)](#-18-bedah-lengkap-database-replication--supabase-pipelines-bigquery-analytics--read-replicas)
+    - [18.1 Dua Jenis Replikasi: Read Replicas vs Pipelines](#181-dua-jenis-replikasi-di-supabase-read-replicas-vs-pipelines)
+    - [18.2 Mengapa SaaS Membutuhkan Replikasi ke Google BigQuery?](#182-mengapa-saas-membutuhkan-replikasi-ke-google-bigquery)
+    - [18.3 Status Paket: FREE Tier vs PRO Tier (Solusi Analitik Free Tier)](#183--status-paket-free-tier-vs-pro-tier)
 
 ---
 
@@ -1029,7 +1033,74 @@ Supabase menyediakan **Supavisor** — *Connection Pooler* generasi terbaru:
 
 ---
 
+## 🚀 18. Bedah Lengkap Database Replication & Supabase Pipelines (BigQuery Analytics & Read Replicas)
+
+Menu **Database ➔ Replication [NEW]** (kelompok `PLATFORM`) dan dokumentasi resmi [Supabase Replication Guides](https://supabase.com/docs/guides/database/replication) menyediakan fasilitas pengaliran data (*data streaming*) dan replikasi multi-node.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🚀 Database Replication (Send data to external destinations)                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🗺️ VISUAL REPLICATION CANVAS:                                                                          │
+│                                                                                                        │
+│  ┌─────────────────────────────────────┐         Change Data Capture (CDC)    ┌─────────────────────┐ │
+│  │ 🇸🇬 Primary Database                │ ─────────────────────────────────────► │ 📊 Google BigQuery  │ │
+│  │   Southeast Asia (ap-southeast-1)   │          (Real-time Streaming)         │   (Data Warehouse)  │ │
+│  └─────────────────────────────────────┘                                       └─────────────────────┘ │
+│                                                                                                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔒 STATUS LISENSI TIER:                                                                                │
+│  - Free Tier : Fitur Terkunci (Menampilkan tombol [Upgrade to Pro]).                                   │
+│  - Pro Tier  : Mengaktifkan Supabase Pipelines untuk ekspor CDC instan ke BigQuery/Warehouse.          │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 18.1 Dua Jenis Replikasi di Supabase: Read Replicas vs Pipelines
+
+Penting untuk memahami dua konsep replikasi yang berbeda di Supabase:
+
+1. **A. Read Replicas (Dikelola di Halaman `Infrastructure`)**:
+   - **Tujuan**: Membuka salinan database PostgreSQL sekunder di berbagai benua (misal: US East, Frankfurt, Tokyo).
+   - **Use Case**: Mendistribusikan beban query `SELECT` agar pengguna global di Eropa atau Amerika mendapatkan latensi akses yang sangat cepat (*low latency*).
+2. **B. Supabase Pipelines / External Destinations (Menu `Replication [NEW]`)**:
+   - **Tujuan**: Mengalirkan seluruh perubahan data (Insert/Update/Delete) secara *real-time* (*Change Data Capture - CDC*) ke Data Warehouse eksternal seperti **Google BigQuery**.
+   - **Use Case**: Kebutuhan analitik data besar (*Big Data Analytics*), Business Intelligence (Looker Studio / Tableau), dan Machine Learning.
+
+---
+
+### 18.2 Mengapa SaaS Membutuhkan Replikasi ke Google BigQuery?
+
+Dalam arsitektur sistem SaaS modern, terdapat prinsip pemisahan beban:
+
+- **OLTP (*Online Transaction Processing*) ➔ PostgreSQL (MariFlow)**:
+  - Fokus pada transaksi cepat mikrodetik: Login, geser kartu Kanban, tambah tugas, dan buat komentar.
+- **OLAP (*Online Analytical Processing*) ➔ Google BigQuery**:
+  - Fokus pada kalkulasi agregasi data historis raksasa: *"Hitung rata-rata waktu penyelesaian tugas oleh 500.000 anggota tim selama 3 tahun terakhir berdasarkan kategori proyek."*
+
+> [!TIP]
+> **Manfaat Replikasi**:
+> Menjalankan query analitik yang memproses jutaan baris data di database operasional PostgreSQL dapat menghabiskan CPU/RAM dan membuat aplikasi pengguna macet (*lag*). Dengan mereplikasi data ke BigQuery via Pipelines, database PostgreSQL MariFlow tetap ringan dan responsif!
+
+---
+
+### 18.3 🔒 Status Paket: FREE Tier vs PRO Tier
+
+> [!WARNING]
+> **Fitur Eksklusif PRO TIER 🔒**:
+> - **Supabase Pipelines (BigQuery / External Destination)** dan **Read Replicas** memerlukan paket **Supabase Pro Plan ($25/bulan)**.
+> - Pada akun **Free Tier** kita saat ini, panel ini menampilkan status *“Upgrade to the Pro plan to replicate database changes to BigQuery”*.
+
+#### 💡 Solusi Analitik untuk MariFlow di Paket FREE Tier:
+Karena saat ini kita menggunakan paket Free Tier, kita tidak perlu khawatir:
+1. Kita telah mengimplementasikan Stored Procedure RPC **`get_role_dashboard_analytics`** yang sangat efisien dan cepat di dalam PostgreSQL.
+2. Untuk pelaporan bulanan, Anda dapat mengekspor data dalam format **CSV / JSON** langsung melalui SQL Editor tanpa biaya sepeser pun.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
