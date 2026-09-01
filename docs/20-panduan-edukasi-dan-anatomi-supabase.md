@@ -134,6 +134,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [34.3 Versi Mesin Layanan (Core Service Versions)](#343--versi-mesin-layanan-core-service-versions)
     - [34.4 Custom Domains: FREE Tier vs PRO Tier](#344--custom-domains-free-tier-vs-pro-tier)
     - [34.5 Transfer & Delete Project (Disaster Prevention)](#345--transfer--delete-project-disaster-prevention)
+35. [Bedah Lengkap Infrastructure Settings (Compute Sizing, Telemetri RAM/CPU/WAL, & Read Replicas)](#-35-bedah-lengkap-infrastructure-settings-compute-sizing-telemetri-ramcpuwal--read-replicas)
+    - [35.1 Topologi Primary Database Proyek MariFlow](#351--topologi-primary-database-proyek-mariflow)
+    - [35.2 Anatomi Penggunaan Disk: Database, WAL, & System](#352--anatomi-penggunaan-disk-database-wal--system)
+    - [35.3 Read Replicas: Penskalaan Horisontal (PRO TIER)](#353--read-replicas-penskalaan-horisontal--pro-tier)
+    - [35.4 Pilihan Compute Sizing: FREE Tier vs PRO Tier](#354--pilihan-compute-sizing-free-tier-vs-pro-tier)
 
 ---
 
@@ -2389,7 +2394,86 @@ Dashboard menampilkan transparansi versi teknologi open-source yang mendasari pr
 
 ---
 
+## 🖥️⚡ 35. Bedah Lengkap Infrastructure Settings (Compute Sizing, Telemetri RAM/CPU/WAL, & Read Replicas)
+
+Menu **Settings ➔ Infrastructure** (di bawah kelompok `CONFIGURATION`) menampilkan peta topologi server fisik, metrik penggunaan resource komputasi (*Compute & Memory*), ukuran disk PostgreSQL, serta opsi penskalaan (*Vertical & Horizontal Scaling*).
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🖥️⚡ SUPABASE INFRASTRUCTURE ARCHITECTURE                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🇸🇬 1. PRIMARY DATABASE INSTANCE:                                                                       │
+│  - Region        : ap-southeast-1 (Singapore).                                                         │
+│  - Instance Type : AWS t3.nano (Compute Size: NANO / 0.5 GB RAM, Shared CPU).                          │
+│  - Status Beban  : CPU ~2-8%, Memory ~54%, Disk ~14%, Connection Pool: 7/60 koneksi (Sangat Sehat!).  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 💾 2. ANATOMI PENGGUNAAN DISK (500 MB Free Tier):                                                      │
+│  - Database Data : ~24.5 MB (Data relasional tabel proyek, tugas, anggota, dsb).                       │
+│  - WAL Logs      : ~80.0 MB (Write-Ahead Logging untuk integritas transaksi ACID).                    │
+│  - System Catalog: ~167.3 MB (Metadata skema PostgreSQL, pg_catalog, extension).                       │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌍 3. READ REPLICAS (Horizontal Scaling) [🔒 PRO TIER]:                                                │
+│  - Menyalin database ke berbagai belahan dunia (e.g. US, Frankfurt, Tokyo) untuk query SELECT cepat.  │
+│  - Persyaratan: Membutuhkan akun PRO Plan & Compute Size minimal 'Small' (2 GB RAM).                   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📈 4. COMPUTE SIZING (Vertical Scaling) [🔒 PRO TIER]:                                                 │
+│  - NANO   : $0 / jam (0.5 GB RAM, Shared CPU) ──► Free Tier bawaan.                                   │
+│  - MICRO  : $0.01344 / jam (~$10/bln) (1 GB RAM, 2-core CPU).                                         │
+│  - SMALL  : $0.0206 / jam (~$15/bln) (2 GB RAM, 2-core CPU).                                          │
+│  - MEDIUM : $0.0822 / jam (~$60/bln) (4 GB RAM, 2-core CPU).                                          │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 35.1 🇸🇬 Topologi Primary Database Proyek MariFlow
+
+Peta visual menampilkan status server database utama:
+1. **Lokasi Server**: Singapore (`ap-southeast-1`).
+2. **Tipe Mesin Virtual**: `t3.nano` (Compute NANO).
+3. **Telemetri Live**:
+   - **CPU**: `2% - 8%` (Beban prosesor sangat ringan).
+   - **RAM / Memory**: `~54%` (Penggunaan memori stabil di batas aman).
+   - **Connection Pool**: `7 / 60 conns` (Hanya terpakai 7 koneksi dari batas maksimal 60 koneksi bersamaan).
+
+---
+
+### 35.2 💾 Anatomi Penggunaan Disk: Database, WAL, & System
+
+Di bagian bawah dashboard, kuota disk database Free Tier (500 MB) terbagi menjadi 3 komponen:
+1. **`Database` (~24.5 MB)**: Ukuran data murni dari baris tabel `workspaces`, `tasks`, `projects`, dan relasinya.
+2. **`WAL` (Write-Ahead Logging) (~80 MB)**: Log transaksi PostgreSQL yang mencatat setiap perubahan data sebelum ditulis ke file disk untuk menjamin pemulihan data (*Crash Recovery & Data Durability*).
+3. **`System` (~167.3 MB)**: Skema bawaan PostgreSQL (`pg_catalog`, `information_schema`, `auth`, `storage`).
+
+---
+
+### 35.3 🌍 Read Replicas: Penskalaan Horisontal (🔒 PRO TIER)
+
+- **Fungsi Read Replicas**:
+  - Menempatkan salinan database *read-only* di berbagai region dunia (misal: US East Ohio, Frankfurt, Sydney).
+  - Ketika jutaan pengguna dari Amerika atau Eropa membuka MariFlow, query `SELECT` akan diarahkan ke server replica terdekat untuk memangkas latensi dari ratusan milidetik menjadi hitungan milidetik.
+- **Kondisi Free Tier**:
+  - Pada Free Tier, seluruh operasi baca (*Reads*) dan tulis (*Writes*) ditangani secara terpusat oleh **Primary Database Singapore**.
+
+---
+
+### 35.4 📈 Pilihan Compute Sizing: FREE Tier vs PRO Tier
+
+| Ukuran Compute | Biaya / Jam | RAM (Memori) | Kapasitas CPU | Status di Akun Kita |
+| :--- | :--- | :--- | :--- | :--- |
+| **NANO** | **$0 / jam** | **0.5 GB (512 MB)** | **Shared Burstable** | 🟢 **Aktif (Free Tier)** |
+| **MICRO** 🔒 | $0.01344 / jam | 1 GB | Dedicated 2-Core | 🔒 PRO Plan |
+| **SMALL** 🔒 | $0.0206 / jam | 2 GB | Dedicated 2-Core | 🔒 PRO Plan (Syarat Read Replica) |
+| **MEDIUM** 🔒 | $0.0822 / jam | 4 GB | Dedicated 2-Core | 🔒 PRO Plan |
+
+> [!NOTE]
+> **Kapasitas Free Tier NANO**:
+> Instance NANO bawaan Free Tier yang kita miliki saat ini sudah sangat sanggup melayani ribuan request harian aplikasi **MariFlow SaaS** untuk kebutuhan tim kecil hingga menengah tanpa kendala performa.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
