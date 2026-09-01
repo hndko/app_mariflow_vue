@@ -96,6 +96,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [26.1 Auth Hooks (Intersepsi Alur Otentikasi dengan Postgres & Edge Functions)](#261--auth-hooks-beta-intersepsi-alur-otentikasi-dengan-postgres--edge-functions)
     - [26.2 Audit Logs (audit_log_entries)](#262--audit-logs-audit_log_entries)
     - [26.3 Auth Performance Tuning (FREE Tier vs PRO Tier)](#263--auth-performance-tuning-free-tier-vs-pro-tier)
+27. [Bedah Lengkap Supabase Storage (Object Storage, Public vs Private Buckets, & Storage RLS)](#-27-bedah-lengkap-supabase-storage-object-storage-public-vs-private-buckets--storage-rls)
+    - [27.1 Anatomi Bucket: Public vs Private](#271--anatomi-bucket-public-vs-private)
+    - [27.2 Keunggulan Arsitektur: RLS di Tingkat File (storage.objects)](#272--keunggulan-arsitektur-rls-di-tingkat-file-storageobjects)
+    - [27.3 Storage Settings: FREE Tier vs PRO Tier](#273--storage-settings-free-tier-vs-pro-tier)
 
 ---
 
@@ -1731,7 +1735,83 @@ Menu **Audit Logs** mencatat seluruh rekaman aktivitas otentikasi di proyek Mari
 
 ---
 
+## 📦 27. Bedah Lengkap Supabase Storage (Object Storage, Public vs Private Buckets, & Storage RLS)
+
+Menu **Storage** (icon 📄📦 pada sidebar utama) adalah layanan penyimpanan file dan media berbasis objek yang terintegrasi langsung dengan mesin database PostgreSQL.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 📦 SUPABASE STORAGE ARCHITECTURE                                                                       │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🗄️ BUCKETS (Wadah Penyimpanan Objek):                                                                 │
+│  ├─ [avatars]          : Foto profil pengguna (Public Bucket / Restriksi MIME: image/*)                │
+│  └─ [task-attachments] : Lampiran file tugas/kanban (Public Bucket / Gambar, PDF, DOCX, ZIP)          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛡️ STORAGE ROW LEVEL SECURITY (RLS di Tabel 'storage.objects'):                                        │
+│  - INSERT Policy : Hanya authenticated user yang boleh upload file ke foldernya sendiri.               │
+│  - SELECT Policy : Publik/anggota workspace boleh membaca file.                                        │
+│  - DELETE Policy : Hanya uploader asli yang boleh menghapus file lampirannya.                          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⚙️ SETTINGS & TIER COMPARISON:                                                                         │
+│  - Free Tier Limit        : Maksimal 50 MB per file upload & kuota 1 GB storage (100% GRATIS).         │
+│  - Image Transformation   : 🔒 PRO TIER (On-the-fly image resizing & WebP compression via URL).        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 27.1 🗄️ Anatomi Bucket: `Public` vs `Private`
+
+Saat membuat bucket baru via modal **Create file bucket**:
+
+1. **`Bucket name`**:
+   - Nama penampung objek (misal: `avatars` dan `task-attachments`).
+   - ⚠️ *Catatan*: Nama bucket tidak dapat diubah setelah dibuat.
+2. **`Public bucket` (Sakelar Publik vs Privat)**:
+   - **🔘 Aktif (`Public = true`)**: URL file dapat diakses secara langsung oleh siapapun melalui browser tanpa perlu otentikasi token JWT (`https://<REF>.supabase.co/storage/v1/object/public/avatars/user-123.png`). Sangat cocok untuk avatar pengguna dan lampiran publik MariFlow.
+   - **⚪ Nonaktif (`Public = false`)**: File hanya bisa diunduh jika pengguna membawa token autentikasi atau menggunakan **Signed URL** berdurasi sementara (`supabase.storage.from('invoices').createSignedUrl('inv-01.pdf', 60)`).
+3. **`Restrict file size`**:
+   - Membatasi ukuran maksimal per file (misal: batasi bucket avatar max 2 MB).
+4. **`Restrict MIME types`**:
+   - Membatasi tipe ekstensi file yang diizinkan (misal: `image/jpeg, image/png, image/webp` untuk bucket avatar agar tidak disusupi file executable `.exe` berbahaya).
+
+---
+
+### 27.2 🛡️ Keunggulan Arsitektur: RLS di Tingkat File (`storage.objects`)
+
+Berbeda dengan AWS S3 tradisional yang menggunakan JSON IAM Policy yang rumit, Supabase menyimpan seluruh metadata file di tabel database PostgreSQL **`storage.objects`** dan **`storage.buckets`**.
+
+Artinya, Anda dapat membuat aturan keamanan menggunakan sintaks SQL PostgreSQL yang sama persis:
+
+```sql
+-- Contoh Kebijakan: Hanya user yang login yang boleh mengupload avatar
+CREATE POLICY "Pengguna login boleh upload avatar"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+```
+
+---
+
+### 27.3 ⚙️ Storage Settings: FREE Tier vs PRO Tier
+
+Di tab **Settings**, terdapat perbandingan fitur:
+
+| Parameter | Free Tier (Akun Kita) | Pro Tier ($25/bulan) 🔒 |
+| :--- | :--- | :--- |
+| **Batas Maksimal Upload File** | **50 MB** per file (Sangat cukup untuk dokumen/gambar) | Hingga **500 GB** per file |
+| **Total Kuota Storage** | **1 GB** Gratis | **100 GB** Termasuk |
+| **Image Transformation** | ⚪ Nonaktif | 🟢 **Aktif** (Resize gambar otomatis on-the-fly) |
+
+> [!TIP]
+> **Apa itu Image Transformation?**:
+> Fitur Pro Tier yang memungkinkan frontend meminta gambar yang sudah dioptimasi secara dinamis cukup dengan menambahkan parameter URL:
+> `https://.../avatar.jpg?width=100&height=100&resize=cover&format=webp`
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 

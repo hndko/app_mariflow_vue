@@ -255,10 +255,16 @@ Agar fitur pendaftaran, login, dan reset password berfungsi dengan benar di doma
 
 ### 4.4 Konfigurasi Storage Buckets & RLS Policy
 
-1. Buka menu **Storage** ➔ Buat bucket:
-   - `avatars` (Public)
-   - `task-attachments` (Public)
-2. Storage Policies telah terkonfigurasi secara otomatis dari script SQL migrasi `01_create_mariflow_schema.sql`.
+1. Buka menu **Storage** ➔ Klik **+ New bucket**:
+   - **Bucket 1: `avatars`**
+     - Status: **Public bucket** (*ON*).
+     - Restrict MIME types (*Opsional*): `image/jpeg, image/png, image/webp`.
+     - File size limit (*Opsional*): `2 MB`.
+   - **Bucket 2: `task-attachments`**
+     - Status: **Public bucket** (*ON*).
+     - File size limit: Mengikuti limit default Free Tier (maksimal **50 MB** per file).
+2. **Storage RLS Policies**:
+   - Seluruh kebijakan keamanan akses tabel `storage.objects` telah terkonfigurasi secara otomatis dari script SQL migrasi `20260902_000001_create_mariflow_schema.sql`.
 
 ---
 
