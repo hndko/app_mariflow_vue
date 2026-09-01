@@ -104,6 +104,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [28.1 Analytics Buckets (PostgreSQL Foreign Data Wrapper + Apache Iceberg)](#281--analytics-buckets-postgresql-foreign-data-wrapper--apache-iceberg)
     - [28.2 Vector Buckets (AI Embeddings & Semantic Search Skala Besar)](#282--vector-buckets-ai-embeddings--semantic-search-skala-besar)
     - [28.3 Status Tier & Tahap Rilis](#283--status-tier--tahap-rilis)
+29. [Bedah Lengkap S3-Compatible Protocol & S3 Access Keys (AWS SDK, Rclone, & RLS Bypass Warning)](#-29-bedah-lengkap-s3-compatible-protocol--s3-access-keys-aws-sdk-rclone--rls-bypass-warning)
+    - [29.1 Apa itu S3-Compatible Protocol di Supabase?](#291--apa-itu-s3-compatible-protocol-di-supabase)
+    - [29.2 Parameter Koneksi S3](#292--parameter-koneksi-s3)
+    - [29.3 Contoh Penggunaan dengan AWS SDK & Python Boto3](#293--contoh-penggunaan-dengan-aws-sdk--python-boto3)
+    - [29.4 Peringatan Keamanan Kritis: S3 Access Keys Bypass RLS!](#294--peringatan-keamanan-kritis-s3-access-keys-bypass-rls)
 
 ---
 
@@ -1869,7 +1874,83 @@ Sub-menu **Analytics [NEW]** dan **Vectors [NEW]** (di bawah menu `Storage ➔ M
 
 ---
 
+## 🪣 29. Bedah Lengkap S3-Compatible Protocol & S3 Access Keys (AWS SDK, Rclone, & RLS Bypass Warning)
+
+Menu **Storage ➔ S3** (kelompok `CONFIGURATION`) membuka antarmuka standar industri **Amazon S3 API Gateway** di atas Supabase Storage.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🪣 S3 PROTOCOL & ACCESS KEYS ARCHITECTURE                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 CONNECTION PARAMETERS:                                                                              │
+│  - S3 Protocol Status : [🔘 ON] Allow clients to connect via S3 protocol.                              │
+│  - S3 Endpoint        : https://rtazqheauyiujjteburi.storage.supabase.co/storage/v1/s3                 │
+│  - Region             : ap-southeast-1 (Singapore)                                                     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 S3 ACCESS KEYS:                                                                                     │
+│  - Terdiri dari: Access Key ID & Secret Access Key.                                                    │
+│  - Digunakan untuk: AWS CLI, Boto3 (Python), AWS SDK (Node.js), Rclone, Cyberduck, FileZilla.          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚨 PERINGATAN KEAMANAN KRITIS (SECURITY BOUNDARY):                                                     │
+│  - ⚠️ S3 Access Keys MEMILIKI AKSES PENUH ke semua bucket & MELEWATI (BYPASS) seluruh RLS Policies!    │
+│  - ⛔ DILARANG KERAS mengekspos S3 Access Key ke Frontend Vue / Browser!                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 29.1 🌐 Apa itu S3-Compatible Protocol di Supabase?
+
+Supabase Storage menyediakan endpoint yang 100% kompatibel dengan protokol **Amazon S3**. 
+
+Hal ini memungkinkan developer untuk mengelola file di Supabase Storage menggunakan berbagai macam alat (*tools*) dan pustaka (*libraries*) standar ekosistem AWS tanpa perlu menggunakan Supabase JavaScript SDK:
+
+- **Bahasa Pemrograman / SDK**: AWS SDK for JavaScript/TypeScript, Python (`boto3`), Go (`aws-sdk-go`), PHP (`aws-sdk-php`).
+- **Peralatan CLI & Backup**: `aws-cli`, `rclone` (sinkronisasi backup harian), `s3cmd`.
+- **GUI File Explorer**: Cyberduck, Transmit, FileZilla Pro.
+
+---
+
+### 29.2 ⚙️ Parameter Koneksi S3
+
+1. **`S3 protocol connection` (🔘 Aktif)**: Mengaktifkan gerbang S3 API pada project.
+2. **`Endpoint`**: URL khusus untuk gateway S3:
+   `https://rtazqheauyiujjteburi.storage.supabase.co/storage/v1/s3`
+3. **`Region`**: `ap-southeast-1` (Wilayah Singapore).
+
+---
+
+### 29.3 🔑 Contoh Penggunaan dengan AWS SDK & Python Boto3
+
+#### Menggunakan Python Boto3:
+```python
+import boto3
+
+s3_client = boto3.client(
+    's3',
+    endpoint_url='https://rtazqheauyiujjteburi.storage.supabase.co/storage/v1/s3',
+    aws_access_key_id='YOUR_S3_ACCESS_KEY_ID',
+    aws_secret_access_key='YOUR_S3_SECRET_ACCESS_KEY',
+    region_name='ap-southeast-1'
+)
+
+# Upload file attachment
+s3_client.upload_file('laporan.pdf', 'task-attachments', 'laporan_2026.pdf')
+```
+
+---
+
+### 29.4 🚨 Peringatan Keamanan Kritis: S3 Access Keys Bypass RLS!
+
+> [!CAUTION]
+> **Tingkat Hak Akses Tertinggi (*Superadmin / Service Role*)**:
+> - Berbeda dengan koneksi frontend yang dibatasi oleh aturan **Row Level Security (RLS)**, **S3 Access Keys memiliki akses penuh (Full Control)** untuk membaca, mengunggah, menimpa, dan menghapus objek apa pun di semua bucket tanpa terikat RLS.
+> - **Aturan Baku**: S3 Access Keys hanya boleh disimpan di server backend terisolasi, CI/CD pipeline, atau script worker batch offline. Dilarang menaruhnya di file `.env` frontend atau repository publik!
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
