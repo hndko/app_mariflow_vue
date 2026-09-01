@@ -47,6 +47,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [15.3 Teknik Optimasi Lanjutan (Composite, Partial & Covering Index)](#153-teknik-optimasi-lanjutan-advanced-saas-indexing-strategies)
     - [15.4 Memeriksa Kinerja Query dengan EXPLAIN ANALYZE](#154-memeriksa-kinerja-query-dengan-explain-analyze)
     - [15.5 Fitur Supabase Index Advisor](#155-fitur-supabase-index-advisor-tombol-di-kanan-atas)
+16. [Bedah Lengkap Database Publications, Policies (RLS), & Roles Architecture](#-16-bedah-lengkap-database-publications-policies-rls--roles-architecture)
+    - [16.1 Database Publications (supabase_realtime & Event Toggles)](#161-database-publications-supabase_realtime)
+    - [16.2 Policies (Row Level Security Visual Manager)](#162-policies-row-level-security-visual-manager)
+    - [16.3 Database Roles (Hierarki Peran PostgreSQL & Arsitektur Keamanan)](#163-database-roles-hierarki-peran-postgresql--arsitektur-keamanan)
+    - [16.4 Anatomi Drawer "Create a new role" & Privilese Database](#164-anatomi-drawer-create-a-new-role--privilese-database)
 
 ---
 
@@ -839,7 +844,101 @@ WHERE workspace_id = '10000000-0000-0000-0000-000000000001'
 
 ---
 
+## 🛡️ 16. Bedah Lengkap Database Publications, Policies (RLS), & Roles Architecture
+
+Menu **Publications** dan kelompok **ACCESS CONTROL** (`Policies` & `Roles`) adalah benteng pertahanan utama keamanan (*Security Boundary*) dan pipa replikasi real-time di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🛡️ ACCESS CONTROL & PUBLICATIONS ARCHITECTURE                                                          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📡 PUBLICATIONS (Replikasi WebSocket Realtime):                                                        │
+│  - [supabase_realtime] ──► Event: [✓] INSERT  [✓] UPDATE  [✓] DELETE  [✓] TRUNCATE                    │
+│    └─ Tabel Terdaftar: public.tasks, public.task_comments, public.notifications                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 👥 POSTGRESQL ROLES (Hierarki Akun Database):                                                          │
+│  1. anon             : Pengguna publik tanpa token login (Hanya baca data landing/public).            │
+│  2. authenticated    : Pengguna sah yang telah login (Membawa JWT auth.uid()).                        │
+│  3. authenticator    : Gateway PostgREST yang memvalidasi JWT dan bertukar peran.                     │
+│  4. service_role     : Kunci rahasia backend dengan privilese BYPASSRLS penuh.                        │
+│  5. supabase_admin   : Superuser pengelola internal server PostgreSQL.                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔐 POLICIES (Row Level Security Visual Auditor):                                                       │
+│  - SELECT Policy     : Hanya tampilkan tugas di mana pengguna menjadi anggota workspace aktif.         │
+│  - INSERT Policy     : Hanya izinkan anggota dengan role minimal 'member' membuat tugas baru.          │
+│  - UPDATE Policy     : Hanya izinkan pembuat tugas / assignee / admin mengubah status kanban.          │
+│  - DELETE Policy     : Hanya izinkan Owner & Admin workspace menghapus tugas.                          │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 16.1 📡 Database Publications (`supabase_realtime`)
+
+Pada menu **Database ➔ Publications**, Anda melihat publikasi bernama **`supabase_realtime`** (System ID: `16430`).
+
+#### 1. Cara Kerja Publikasi Replikasi
+- Supabase Realtime memanfaatkan fitur **PostgreSQL Logical Replication**.
+- Saat ada data yang berubah di database, engine PostgreSQL akan menerbitkan (*publish*) rekaman perubahan ke *Replication Stream* yang kemudian ditangkap oleh Realtime Server Elixir untuk disiarkan ke frontend Vue melalui WebSocket.
+
+#### 2. Event Toggles (`INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`)
+- Anda dapat mengontrol tipe event apa saja yang disiarkan:
+  - **`INSERT`**: Menyiarkan baris data baru saat tugas / komentar baru dibuat.
+  - **`UPDATE`**: Menyiarkan perubahan data saat kartu tugas dipindah antar kolom Kanban.
+  - **`DELETE`**: Menyiarkan notifikasi penghapusan baris data.
+  - **`TRUNCATE`**: Menyiarkan pembersihan seluruh data tabel.
+
+> [!TIP]
+> **Best Practice SaaS (Hemat Kuota Free Tier)**:
+> Jangan daftarkan seluruh tabel ke dalam `supabase_realtime`. Daftarkan hanya tabel yang membutuhkan kolaborasi langsung (*live sync*), seperti **`tasks`**, **`task_comments`**, dan **`notifications`**. Tabel statis seperti `profiles` atau `workspaces` cukup diambil saat *page load*.
+
+---
+
+### 16.2 🔐 Policies (Row Level Security Visual Manager)
+
+Menu **Database ➔ Policies** adalah tempat Anda memantau dan mengaudit seluruh aturan keamanan baris (RLS) di seluruh tabel skema `public`.
+
+- **Kenapa RLS Wajib di MariFlow SaaS?**:
+  - Di arsitektur Backend-as-a-Service (BaaS), frontend Vue berinteraksi langsung dengan database PostgreSQL.
+  - RLS bertindak sebagai *filter otomatis permanen di level kernel database*. Pengguna dari Workspace A **secara matematis mustahil** membaca atau memanipulasi data milik Workspace B, meskipun mereka mencoba mengirim raw SQL/HTTP request dari Postman!
+
+---
+
+### 16.3 👥 Database Roles (Hierarki Peran PostgreSQL & Arsitektur Keamanan)
+
+Menu **Database ➔ Roles** menampilkan seluruh peran (*database roles*) yang dikelola oleh Supabase (`Roles managed by Supabase - PROTECTED`):
+
+| Nama Role | Status Proteksi | Deskripsi & Perannya dalam Ekosistem Supabase |
+| :--- | :--- | :--- |
+| **`anon`** | 🟢 Terproteksi | Digunakan untuk request publik sebelum pengguna login. Hanya boleh membaca tabel publik (seperti landing page). |
+| **`authenticated`** | 🟢 Terproteksi | Digunakan setelah user login via `supabase.auth.signInWithPassword()`. Seluruh query SQL otomatis memiliki konteks `auth.uid()`. |
+| **`authenticator`** | 🟢 Terproteksi | Peran jembatan (*bridge role*) yang dipakai oleh API Gateway PostgREST. Saat HTTP request masuk dengan Bearer Token JWT, `authenticator` memvalidasi signature token, lalu secara dinamis berganti peran (*assume role*) menjadi `authenticated` atau `anon`. |
+| **`service_role`** | 🟢 Terproteksi | Kunci rahasia administratif (*secret key*) yang memiliki privilese **`BYPASSRLS`**. **Dilarang keras dimasukkan ke frontend Vue**. Hanya digunakan di Edge Functions atau backend terisolasi. |
+| **`dashboard_user`** | 🟢 Terproteksi | Peran yang digunakan oleh browser Anda saat mengoperasikan Table Editor atau SQL Editor di dashboard Supabase. |
+| **`pgbouncer`** | 🟢 Terproteksi | Peran internal untuk mengelola *Connection Pooler* (Supavisor / PgBouncer). |
+| **`supabase_admin`** | 🟢 Terproteksi | Peran superuser internal sistem Supabase untuk pemeliharaan cloud infrastructure. |
+| **`supabase_auth_admin`**| 🟢 Terproteksi | Peran khusus yang mengelola tabel otentikasi `auth.users` dan `auth.identities`. |
+
+---
+
+### 16.4 ➕ Anatomi Drawer "Create a new role" & Privilese Database
+
+Saat Anda mengklik tombol **`+ Add role`**, Anda dapat membuat custom role untuk kebutuhan khusus (misal: bot data analytics atau integrasi read-only ETL):
+
+1. **`User can login` (`LOGIN`)**: Mengizinkan role ini terhubung ke database menggunakan username & password.
+2. **`User can create roles` (`CREATEROLE`)**: Mengizinkan role ini membuat sub-role baru.
+3. **`User can create databases` (`CREATEDB`)**: Mengizinkan pembuatan database baru.
+4. **`User bypasses every row level security policy` (`BYPASSRLS`)**:
+   - ⚠️ **Sangat Berbahaya**: Mengabaikan seluruh aturan RLS (seperti `service_role`). Jangan aktifkan untuk akun publik!
+5. **`User can initiate streaming replication` (`REPLICATION`)**: Mengizinkan sinkronisasi data replikasi eksternal.
+6. **Batasan Keamanan Cloud**:
+   - *These privileges cannot be granted via the Dashboard: User is a Superuser*.
+   - Supabase menonaktifkan pemberian hak akses Superuser murni demi menjaga integritas dan keamanan cloud database multi-tenant.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
