@@ -75,6 +75,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [21.2 6 Template Otentikasi Utama & Variabel Dinamis](#212--6-template-otentikasi-utama--variabel-dinamisnya)
     - [21.3 7 Notifikasi Peringatan Keamanan (Security Notifications)](#213--7-notifikasi-peringatan-keamanan-security-notifications)
     - [21.4 Konfigurasi Custom SMTP Provider (Tab SMTP Settings)](#214--konfigurasi-custom-smtp-provider-tab-smtp-settings)
+22. [Bedah Lengkap Sign In & Providers (User Signups, Social OAuth, & Custom OIDC)](#-22-bedah-lengkap-sign-in--providers-user-signups-social-oauth--custom-oidc)
+    - [22.1 Kontrol Registrasi Pengguna (User Signups)](#221--kontrol-registrasi-pengguna-user-signups)
+    - [22.2 Mengaktifkan Social Login di MariFlow (Google & GitHub)](#222--mengaktifkan-social-login-di-mariflow-google--github)
+    - [22.3 Custom Auth Providers (Enterprise OIDC SSO)](#223--custom-auth-providers-new-enterprise-oidc-sso)
 
 ---
 
@@ -1360,7 +1364,88 @@ Untuk menghubungkan provider seperti **Resend**, **SendGrid**, **Mailgun**, atau
 
 ---
 
+## 🔑 22. Bedah Lengkap Sign In & Providers (User Signups, Social OAuth, & Custom OIDC)
+
+Menu **Authentication ➔ Sign In / Providers** (kelompok `CONFIGURATION`) mengatur gerbang registrasi pengguna, aktivasi metode login sosial (Google, GitHub, Apple, Azure), dan pendaftaran Custom OpenID Connect (OIDC) SSO.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🔑 Sign In / Providers (Supabase Auth & Third-Party Auth)                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 👥 USER SIGNUPS CONTROLS:                                                                              │
+│  - [🔘 ON]  Allow new users to sign up   (Buka registrasi publik / Matikan untuk Invite-Only)          │
+│  - [🔘 ON]  Confirm email                (Wajibkan konfirmasi email sebelum login pertama)             │
+│  - [⚪ OFF] Allow manual linking         (Tautkan banyak provider ke 1 akun user_id)                   │
+│  - [⚪ OFF] Allow anonymous sign-ins     (Sesi tamu tanpa email yang dapat di-upgrade nanti)           │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 AUTH PROVIDERS (20+ Pilihan Login):                                                                 │
+│  - 🟢 Email (Bawaan Aktif)               - ⚪ Google, GitHub, Apple, Microsoft Azure, Discord, Figma   │
+│  - ⚪ SAML 2.0 (Enterprise SSO)          - ⚪ Web3 Wallet (Login dompet crypto Ethereum/Solana)        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🏢 CUSTOM PROVIDERS [NEW] (OpenID Connect / OIDC SSO):                                                 │
+│  - [+ New Provider] ──► Integrasi Custom OAuth Perusahaan / Okta / Keycloak                            │
+│  - Discovery URL    : https://auth.company.com/.well-known/openid-configuration                        │
+│  - Callback URL     : https://rtazqheauyiujjteburi.supabase.co/auth/v1/callback                        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 22.1 👥 Kontrol Registrasi Pengguna (*User Signups*)
+
+1. **`Allow new users to sign up`**:
+   - **🔘 Aktif (Default)**: Siapa saja dapat mendaftar mandiri (*Self-Registration*) melalui halaman register `/register` MariFlow.
+   - **⚪ Nonaktif**: Menutup pintu pendaftaran publik. Aplikasi beralih menjadi mode **Invite-Only SaaS** (hanya admin yang dapat mengundang anggota via menu Users atau Workspace Member Invite).
+2. **`Confirm email`**:
+   - **🔘 Aktif (Rekomendasi Produksi)**: Pengguna wajib mengklik link konfirmasi di email mereka sebelum akun diizinkan login. Mencegah pendaftaran bot dan spam akun palsu.
+3. **`Allow manual linking`**:
+   - Mengizinkan pengguna menghubungkan beberapa metode login ke satu akun yang sama (misal: user awalnya mendaftar dengan email/password, lalu menautkan akun Google-nya via `supabase.auth.linkIdentity()`).
+4. **`Allow anonymous sign-ins`**:
+   - Menghasilkan sesi login tamu anonim tanpa email. Sangat populer untuk aplikasi *try-before-you-buy* di mana data tugas tamu dapat otomatis ditransfer ke akun permanen saat user memutuskan untuk sign-up.
+
+---
+
+### 22.2 🌐 Mengaktifkan Social Login di MariFlow (Google & GitHub)
+
+Supabase mendukung lebih dari 20 provider otentikasi pihak ketiga:
+
+```text
+[Frontend Vue] ──(1. signInWithOAuth)──► [Google / GitHub OAuth Screen]
+      ▲                                                  │ (2. User Setuju)
+      │                                                  ▼
+[MariFlow App] ◄──(4. Session JWT)─────── [Supabase Callback Gateway]
+```
+
+#### Cara Menghubungkan Google Login:
+1. Buat *OAuth 2.0 Client ID* di **Google Cloud Console**.
+2. Masukkan **Authorized Redirect URI**:
+   `https://rtazqheauyiujjteburi.supabase.co/auth/v1/callback`
+3. Salin `Client ID` dan `Client Secret` ke panel **Auth Providers ➔ Google** di Supabase.
+4. Di frontend Vue, panggil:
+   ```typescript
+   await supabase.auth.signInWithOAuth({
+     provider: 'google',
+     options: { redirectTo: window.location.origin }
+   })
+   ```
+
+---
+
+### 22.3 🏢 Custom Auth Providers [NEW] (Enterprise OIDC SSO)
+
+Fitur **Custom Providers** memungkinkan MariFlow terhubung ke Identity Provider kustom internal perusahaan klien (seperti Keycloak, Okta, Auth0, atau Active Directory):
+
+1. **`Provider Identifier`**: Kode unik untuk pemanggilan SDK (misal: `custom:perusahaan-x` ➔ `supabase.auth.signInWithOAuth({ provider: 'custom:perusahaan-x' })`).
+2. **`Configuration Method (Auto-discovery)`**:
+   - Cukup masukkan `Discovery URL` OpenID Connect (misal: `https://auth.perusahaan.com/.well-known/openid-configuration`), dan Supabase akan otomatis mengambil endpoint token, authorization, dan public JWKS keys!
+3. **`Callback URL`**:
+   - URL yang wajib didaftarkan di portal SSO perusahaan:
+     `https://rtazqheauyiujjteburi.supabase.co/auth/v1/callback`
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
