@@ -124,7 +124,6 @@ END $$;
 
 -- ------------------------------------------------------------------------------
 -- 1.5 PASTIKAN ENUM user_role & KOLOM role ADA DI PROFILES
--- ------------------------------------------------------------------------------
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
@@ -136,10 +135,14 @@ BEGIN
             WHEN duplicate_object THEN NULL;
         END;
     END IF;
-END $$;
 
-ALTER TABLE public.profiles 
-ADD COLUMN IF NOT EXISTS role public.user_role DEFAULT 'member'::public.user_role;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'role'
+    ) THEN
+        EXECUTE 'ALTER TABLE public.profiles ADD COLUMN role public.user_role DEFAULT ''member''';
+    END IF;
+END $$;
 
 -- ------------------------------------------------------------------------------
 -- 2. SINKRONISASI PROFILES
@@ -157,11 +160,11 @@ SELECT
     END,
     email,
     CASE 
-        WHEN email = 'superadmin@example.com' THEN 'superadmin'::public.user_role
-        WHEN email = 'owner@example.com' THEN 'owner'::public.user_role
-        WHEN email = 'admin@example.com' THEN 'admin'::public.user_role
-        WHEN email = 'member@example.com' THEN 'member'::public.user_role
-        ELSE 'viewer'::public.user_role
+        WHEN email = 'superadmin@example.com' THEN 'superadmin'
+        WHEN email = 'owner@example.com' THEN 'owner'
+        WHEN email = 'admin@example.com' THEN 'admin'
+        WHEN email = 'member@example.com' THEN 'member'
+        ELSE 'viewer'
     END,
     NOW(),
     NOW()
@@ -229,7 +232,7 @@ BEGIN
         ) ON CONFLICT (id) DO NOTHING;
 
         INSERT INTO public.profiles (id, full_name, email, role, created_at, updated_at)
-        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', 'owner'::public.user_role, NOW(), NOW())
+        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', 'owner', NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
     END IF;
 
@@ -279,51 +282,51 @@ BEGIN
     -- Insert Members
     IF owner_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, owner_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '30 days')
+        VALUES (ws_main_id, owner_uid, 'owner', NOW() - INTERVAL '30 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF admin_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, admin_uid, 'admin'::public.workspace_role, NOW() - INTERVAL '28 days')
+        VALUES (ws_main_id, admin_uid, 'admin', NOW() - INTERVAL '28 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '25 days')
+        VALUES (ws_main_id, member_uid, 'member', NOW() - INTERVAL '25 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF viewer_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, viewer_uid, 'viewer'::public.workspace_role, NOW() - INTERVAL '20 days')
+        VALUES (ws_main_id, viewer_uid, 'viewer', NOW() - INTERVAL '20 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     -- Workspace 2 Members
     IF owner_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_client_id, owner_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '20 days')
+        VALUES (ws_client_id, owner_uid, 'owner', NOW() - INTERVAL '20 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_client_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '18 days')
+        VALUES (ws_client_id, member_uid, 'member', NOW() - INTERVAL '18 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     -- Workspace 3 Members
     IF admin_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_fintech_id, admin_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '10 days')
+        VALUES (ws_fintech_id, admin_uid, 'owner', NOW() - INTERVAL '10 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_fintech_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '9 days')
+        VALUES (ws_fintech_id, member_uid, 'member', NOW() - INTERVAL '9 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 END $$;
@@ -386,7 +389,7 @@ BEGIN
         ws_main_id,
         'Pembangunan Platform MariFlow v1.0',
         'Pengembangan inti fitur multi-workspace, task kanban board, dan integrasi Supabase end-to-end.',
-        'active'::public.project_status,
+        'active',
         CURRENT_DATE - INTERVAL '15 days',
         CURRENT_DATE + INTERVAL '45 days',
         owner_uid,
@@ -398,7 +401,7 @@ BEGIN
         ws_main_id,
         'Redesain Landing Page & Branding',
         'Pembaruan visual identitas brand Mari Partner dan landing page marketing SaaS yang responsif.',
-        'planning'::public.project_status,
+        'planning',
         CURRENT_DATE + INTERVAL '5 days',
         CURRENT_DATE + INTERVAL '30 days',
         admin_uid,
@@ -410,7 +413,7 @@ BEGIN
         ws_main_id,
         'Integrasi Sistem Pembayaran & Invoicing',
         'Implementasi gateway subscription SaaS, kupon diskon, dan faktur otomatis.',
-        'active'::public.project_status,
+        'active',
         CURRENT_DATE - INTERVAL '5 days',
         CURRENT_DATE + INTERVAL '60 days',
         owner_uid,
@@ -422,7 +425,7 @@ BEGIN
         ws_client_id,
         'Audit Keamanan & Penetrasi RLS Database',
         'Audit kepatuhan PostgreSQL Row Level Security, proteksi token anon, dan sanitasi input form.',
-        'completed'::public.project_status,
+        'completed',
         CURRENT_DATE - INTERVAL '25 days',
         CURRENT_DATE - INTERVAL '2 days',
         admin_uid,
@@ -499,8 +502,8 @@ BEGIN
         p_mariflow_v1,
         'Setup Database Migrations & PostgreSQL RLS',
         'Membuat skema tabel profiles, workspaces, members, projects, tasks, comments, dan storage policies.',
-        'completed'::public.task_status,
-        'urgent'::public.task_priority,
+        'completed',
+        'urgent',
         owner_uid,
         owner_uid,
         CURRENT_DATE - INTERVAL '5 days',
@@ -513,8 +516,8 @@ BEGIN
         p_mariflow_v1,
         'Konfigurasi Supabase Auth & Session Handling',
         'Integrasi login, registrasi, lupa password, reset password, dan listener onAuthStateChange di Pinia Store.',
-        'completed'::public.task_status,
-        'high'::public.task_priority,
+        'completed',
+        'high',
         admin_uid,
         owner_uid,
         CURRENT_DATE - INTERVAL '3 days',
@@ -527,8 +530,8 @@ BEGIN
         p_mariflow_v1,
         'Kustomisasi Pesan Error Sistem & Database',
         'Penerjemahan raw error database dan Supabase Auth ke Bahasa Indonesia yang ramah via errorHandler.ts.',
-        'completed'::public.task_status,
-        'medium'::public.task_priority,
+        'completed',
+        'medium',
         member_uid,
         admin_uid,
         CURRENT_DATE - INTERVAL '1 days',
@@ -542,8 +545,8 @@ BEGIN
         p_mariflow_v1,
         'Implementasi Drag & Drop Papan Kanban',
         'Mengintegrasikan HTML5 Drag & Drop API pada kolom To Do, In Progress, Review, dan Completed.',
-        'in_progress'::public.task_status,
-        'urgent'::public.task_priority,
+        'in_progress',
+        'urgent',
         member_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '3 days',
@@ -556,8 +559,8 @@ BEGIN
         p_mariflow_v1,
         'Supabase Storage Multi-file Dropzone',
         'Fitur upload lampiran berkas multi-file dengan drag & drop, thumbnail preview, dan size limiter.',
-        'in_progress'::public.task_status,
-        'high'::public.task_priority,
+        'in_progress',
+        'high',
         admin_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '5 days',
@@ -570,8 +573,8 @@ BEGIN
         p_mariflow_v1,
         'Navigasi Route Guard CheckRoleMiddleware',
         'Pengamanan rute router berbasis single CheckRoleMiddleware dan bypass otomatis untuk Superadmin.',
-        'in_progress'::public.task_status,
-        'medium'::public.task_priority,
+        'in_progress',
+        'medium',
         owner_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '4 days',
@@ -585,8 +588,8 @@ BEGIN
         p_mariflow_v1,
         'Review Mockup Dashboard Analytics & KPI',
         'Evaluasi grafik kecepatan penyelesaian tugas, distribusi beban kerja tim, dan pie chart status proyek.',
-        'review'::public.task_status,
-        'high'::public.task_priority,
+        'review',
+        'high',
         owner_uid,
         admin_uid,
         CURRENT_DATE + INTERVAL '2 days',
@@ -599,8 +602,8 @@ BEGIN
         p_payment_sys,
         'Review Integrasi Webhook Gateway Pembayaran',
         'Pengujian sandbox pembayaran subscription dan pengiriman invoice email otomatis.',
-        'review'::public.task_status,
-        'medium'::public.task_priority,
+        'review',
+        'medium',
         admin_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '6 days',
@@ -614,8 +617,8 @@ BEGIN
         p_landing_page,
         'Desain Header Hero & Ilustrasi Mari Partner',
         'Membuat visual ilustrasi bertema modern SaaS dengan badge preview interaktif untuk landing page.',
-        'todo'::public.task_status,
-        'medium'::public.task_priority,
+        'todo',
+        'medium',
         member_uid,
         admin_uid,
         CURRENT_DATE + INTERVAL '10 days',
@@ -628,8 +631,8 @@ BEGIN
         p_landing_page,
         'Optimasi Mobile Viewport & Dark Mode Theme',
         'Memastikan seluruh halaman publik dan modul SaaS tampil sempurna pada layar smartphone.',
-        'todo'::public.task_status,
-        'low'::public.task_priority,
+        'todo',
+        'low',
         member_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '12 days',
@@ -642,8 +645,8 @@ BEGIN
         p_mariflow_v1,
         'Pemberitahuan Realtime & Bell Notification Center',
         'Sinkronisasi notifikasi live saat pengguna ditugaskan ke task baru atau dimention di komentar.',
-        'todo'::public.task_status,
-        'high'::public.task_priority,
+        'todo',
+        'high',
         admin_uid,
         owner_uid,
         CURRENT_DATE + INTERVAL '8 days',

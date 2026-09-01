@@ -128,10 +128,14 @@ BEGIN
             WHEN duplicate_object THEN NULL;
         END;
     END IF;
-END $$;
 
-ALTER TABLE public.profiles 
-ADD COLUMN IF NOT EXISTS role public.user_role DEFAULT 'member'::public.user_role;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'role'
+    ) THEN
+        EXECUTE 'ALTER TABLE public.profiles ADD COLUMN role public.user_role DEFAULT ''member''';
+    END IF;
+END $$;
 
 -- 3. Sinkronisasikan Data Profil ke public.profiles
 INSERT INTO public.profiles (id, full_name, avatar_url, email, role, created_at, updated_at)
@@ -147,11 +151,11 @@ SELECT
     END,
     email,
     CASE 
-        WHEN email = 'superadmin@example.com' THEN 'superadmin'::public.user_role
-        WHEN email = 'owner@example.com' THEN 'owner'::public.user_role
-        WHEN email = 'admin@example.com' THEN 'admin'::public.user_role
-        WHEN email = 'member@example.com' THEN 'member'::public.user_role
-        ELSE 'viewer'::public.user_role
+        WHEN email = 'superadmin@example.com' THEN 'superadmin'
+        WHEN email = 'owner@example.com' THEN 'owner'
+        WHEN email = 'admin@example.com' THEN 'admin'
+        WHEN email = 'member@example.com' THEN 'member'
+        ELSE 'viewer'
     END,
     NOW(),
     NOW()

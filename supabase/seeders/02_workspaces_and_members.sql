@@ -52,7 +52,7 @@ BEGIN
         ) ON CONFLICT (id) DO NOTHING;
 
         INSERT INTO public.profiles (id, full_name, email, role, created_at, updated_at)
-        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', 'owner'::public.user_role, NOW(), NOW())
+        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', 'owner', NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
     END IF;
 
@@ -103,51 +103,51 @@ BEGIN
     -- Workspace 1 (Mari Partner Hub)
     IF owner_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, owner_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '30 days')
+        VALUES (ws_main_id, owner_uid, 'owner', NOW() - INTERVAL '30 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF admin_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, admin_uid, 'admin'::public.workspace_role, NOW() - INTERVAL '28 days')
+        VALUES (ws_main_id, admin_uid, 'admin', NOW() - INTERVAL '28 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '25 days')
+        VALUES (ws_main_id, member_uid, 'member', NOW() - INTERVAL '25 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF viewer_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_main_id, viewer_uid, 'viewer'::public.workspace_role, NOW() - INTERVAL '20 days')
+        VALUES (ws_main_id, viewer_uid, 'viewer', NOW() - INTERVAL '20 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     -- Workspace 2 (Client Projects)
     IF owner_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_client_id, owner_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '20 days')
+        VALUES (ws_client_id, owner_uid, 'owner', NOW() - INTERVAL '20 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_client_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '18 days')
+        VALUES (ws_client_id, member_uid, 'member', NOW() - INTERVAL '18 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     -- Workspace 3 (Mobile App Team)
     IF admin_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_fintech_id, admin_uid, 'owner'::public.workspace_role, NOW() - INTERVAL '10 days')
+        VALUES (ws_fintech_id, admin_uid, 'owner', NOW() - INTERVAL '10 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
     IF member_uid IS NOT NULL THEN
         INSERT INTO public.workspace_members (workspace_id, user_id, role, created_at)
-        VALUES (ws_fintech_id, member_uid, 'member'::public.workspace_role, NOW() - INTERVAL '9 days')
+        VALUES (ws_fintech_id, member_uid, 'member', NOW() - INTERVAL '9 days')
         ON CONFLICT (workspace_id, user_id) DO NOTHING;
     END IF;
 
