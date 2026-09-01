@@ -114,6 +114,12 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [30.2 3 Cara Pembuatan & Deployment Edge Functions](#302--3-cara-pembuatan--deployment-edge-functions)
     - [30.3 Manajemen Kunci Rahasia (Edge Function Secrets)](#303--manajemen-kunci-rahasia-edge-function-secrets)
     - [30.4 Kuota Paket: FREE Tier vs PRO Tier](#304--kuota-paket-free-tier-vs-pro-tier)
+31. [Bedah Lengkap Supabase Realtime (Postgres Changes, Broadcast, Presence, & Realtime RLS)](#-31-bedah-lengkap-supabase-realtime-postgres-changes-broadcast-presence--realtime-rls)
+    - [31.1 3 Pilar Utama Fitur Realtime di MariFlow SaaS](#311--3-pilar-utama-fitur-realtime-di-mariflow-saas)
+    - [31.2 Realtime Inspector (Alat Debugging Langsung)](#312--realtime-inspector-alat-debugging-langsung)
+    - [31.3 Realtime Authorization & RLS Policies (realtime.messages)](#313--realtime-authorization--rls-policies-realtimemessages)
+    - [31.4 Realtime Settings: FREE Tier vs PRO Tier](#314--realtime-settings-free-tier-vs-pro-tier)
+    - [31.5 Higienitas Subscription di Vue 3 (Anti-Memory Leak)](#315--higienitas-subscription-di-vue-3-anti-memory-leak)
 
 ---
 
@@ -2047,7 +2053,109 @@ Di sub-menu **Edge Functions ➔ Secrets**, Anda menyimpan kunci rahasia pihak k
 
 ---
 
+## 📡 31. Bedah Lengkap Supabase Realtime (Postgres Changes, Broadcast, Presence, & Realtime RLS)
+
+Menu **Realtime** (icon 📡🖱️ pada sidebar utama) mengelola infrastruktur komunikasi dua arah latensi rendah (*Full-Duplex WebSockets*) yang memungkinkan kolaborasi tim instan di MariFlow SaaS.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 📡 SUPABASE REALTIME WEBSOCKET ARCHITECTURE                                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔮 3 PILAR UTAMA REALTIME:                                                                             │
+│  ├─ 1. [Postgres Changes] : Dengarkan INSERT/UPDATE/DELETE database (Sinkronisasi Kanban Board).      │
+│  ├─ 2. [Broadcast]        : Kirim pesan kilat antar klien tanpa simpan ke DB (Indikator Typing Chat). │
+│  └─ 3. [Presence]         : Lacak siapa user/anggota tim yang sedang Online di Workspace.             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔍 REALTIME INSPECTOR:                                                                                 │
+│  - Live WebSocket packet sniffer untuk debugging siaran pesan & channel secara langsung di dashboard. │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛡️ REALTIME AUTHORIZATION & POLICIES (Tabel 'realtime.messages'):                                      │
+│  - Amankan Private Channels dengan RLS! Hanya anggota workspace sah yang boleh mendengarkan siaran.   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🟢 FREE TIER LIMITS:                                                                                   │
+│  - 200 Concurrent Connected Clients (200 pengguna online bersamaan) & 100 events/detik (100% GRATIS). │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 31.1 🔮 3 Pilar Utama Fitur Realtime di MariFlow SaaS
+
+#### 1. `Postgres Changes` (Change Data Capture / CDC)
+- **Cara Kerja**: Terhubung langsung ke publikasi logical replication PostgreSQL (`supabase_realtime`).
+- **Penerapan di MariFlow**: Saat seorang anggota tim memindahkan kartu tugas di Kanban Board dari *In Progress* ke *Completed*, kartu tugas di layar browser anggota tim lainnya akan **otomatis bergeser seketika** tanpa perlu merefresh halaman!
+- **Contoh Kode Vue 3**:
+  ```typescript
+  const channel = supabase
+    .channel('tasks-db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+      taskStore.handleRealtimeUpdate(payload)
+    })
+    .subscribe()
+  ```
+
+#### 2. `Broadcast` (Client-to-Client Ephemeral Messages)
+- **Cara Kerja**: Mengirim pesan kilat berlatensi ultra-rendah antar browser tanpa menyimpannya ke database disk.
+- **Penerapan di MariFlow**: Indikator *"Budi sedang mengetik komentar..."* atau kursor kolaboratif live (*Figma-like live cursors*).
+
+#### 3. `Presence` (Status Online & Sinkronisasi State)
+- **Cara Kerja**: Melacak status koneksi pengguna yang sedang aktif membuka halaman workspace.
+- **Penerapan di MariFlow**: Menampilkan avatar bercahaya hijau *"3 Anggota Tim Sedang Online di Workspace Ini"*.
+
+---
+
+### 31.2 🔍 Realtime Inspector (Alat Debugging Langsung)
+
+Menu **Realtime ➔ Inspector** menyediakan konsol pemantau siaran WebSocket:
+- Anda dapat memilih channel (misal: `workspace-123`), memilih role (`authenticated` / `postgres`), lalu mengklik tombol **`▶ Start listening`**.
+- Seluruh paket pesan WebSocket yang melintas akan tercatat secara visual dan real-time untuk mempermudah investigasi bug.
+
+---
+
+### 31.3 🛡️ Realtime Authorization & RLS Policies (`realtime.messages`)
+
+Supabase Realtime v2 mendukung otorisasi keamanan berbasis **Row Level Security**:
+- Di menu **Realtime ➔ Policies**, Anda dapat membuat kebijakan RLS pada tabel internal **`realtime.messages`**.
+- **Tujuan**: Mencegah kebocoran data siaran. Pengguna dari luar Workspace tidak akan bisa menguping pesan siaran Broadcast maupun Presence dari Workspace orang lain!
+
+```sql
+-- Contoh Kebijakan: Hanya user terautentikasi yang boleh mendengarkan siaran Broadcast
+CREATE POLICY "Allow listening for broadcasts for authenticated users only"
+ON realtime.messages FOR SELECT
+TO authenticated
+USING ( realtime.messages.extension = 'broadcast' );
+```
+
+---
+
+### 31.4 ⚙️ Realtime Settings: FREE Tier vs PRO Tier
+
+Di tab **Realtime ➔ Settings**:
+
+| Parameter | Free Tier (Akun Kita) | Pro Tier ($25/bulan) 🔒 |
+| :--- | :--- | :--- |
+| **Max Concurrent Clients** | **200 Pengguna Online Bersamaan** | **500+ hingga puluhan ribu koneksi** |
+| **Max Events per Second** | **100 Event / Detik** | Tanpa batas (*Unlimited event throughput*) |
+| **Database Pool Size** | 2 Koneksi pool khusus Realtime Auth | Dapat dikustomisasi sesuai beban traffic |
+
+---
+
+### 31.5 🧹 Higienitas Subscription di Vue 3 (*Anti-Memory Leak*)
+
+> [!IMPORTANT]
+> **Aturan Wajib Pengembangan MariFlow (`AGENTS.md`)**:
+> Seluruh channel WebSocket Realtime yang dibuka pada hook `onMounted()` **wajib di-unsubscribe** pada hook `onBeforeUnmount()` di komponen Vue untuk mencegah kebocoran memori (*memory leak*):
+>
+> ```typescript
+> onBeforeUnmount(() => {
+>   supabase.removeChannel(channel)
+> })
+> ```
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
