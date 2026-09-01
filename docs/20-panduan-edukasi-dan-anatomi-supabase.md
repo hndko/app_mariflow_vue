@@ -70,6 +70,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [20.1 Direktori Pengguna (Authentication Users)](#201--direktori-pengguna-authentication--users)
     - [20.2 Anatomi Opsi Pembuatan Akun: Create User vs Send Invitation](#202--anatomi-opsi-pembuatan-akun-create-user-vs-send-invitation)
     - [20.3 OAuth Apps & OAuth 2.0 Server](#203--oauth-apps--oauth-20-server-beta)
+21. [Bedah Lengkap Email Notifications & Custom SMTP Server (Templates & Security Alerts)](#-21-bedah-lengkap-email-notifications--custom-smtp-server-templates--security-alerts)
+    - [21.1 Perbedaan Email Bawaan vs Custom SMTP Provider](#211-perbedaan-email-bawaan-built-in-pool-vs-custom-smtp-provider)
+    - [21.2 6 Template Otentikasi Utama & Variabel Dinamis](#212--6-template-otentikasi-utama--variabel-dinamisnya)
+    - [21.3 7 Notifikasi Peringatan Keamanan (Security Notifications)](#213--7-notifikasi-peringatan-keamanan-security-notifications)
+    - [21.4 Konfigurasi Custom SMTP Provider (Tab SMTP Settings)](#214--konfigurasi-custom-smtp-provider-tab-smtp-settings)
 
 ---
 
@@ -1267,7 +1272,96 @@ Menu **OAuth Apps** dan **OAuth Server** adalah fitur generasi baru Supabase unt
 
 ---
 
+## 📧 21. Bedah Lengkap Email Notifications & Custom SMTP Server (Templates & Security Alerts)
+
+Menu **Authentication ➔ Emails** (kelompok `NOTIFICATIONS`) mengelola seluruh sistem pengiriman email transaksional, verifikasi akun, pemulihan kata sandi, dan notifikasi keamanan akun.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 📧 Authentication Emails (Templates & SMTP Settings)                                                   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📑 TAB 1: TEMPLATES (Daftar Template Email Sistem):                                                    │
+│  ├─ [Authentication]:                                                                                  │
+│  │   - Confirm sign up      : Tautan konfirmasi email setelah pendaftaran mandiri.                     │
+│  │   - Invite user          : Email undangan bergabung ke MariFlow dengan Magic Link.                  │
+│  │   - Magic link or OTP    : Token passwordless 1-klik untuk login instan.                            │
+│  │   - Change email address : Verifikasi kepemilikan saat email akun diganti.                          │
+│  │   - Reset password       : Tautan pemulihan kata sandi lupa password.                               │
+│  │   - Reauthentication     : Verifikasi ulang identitas sebelum aksi berbahaya.                       │
+│  └─ [Security Notifications]:                                                                          │
+│      - Password changed, Email changed, Phone changed, MFA added/removed (Notifikasi peringatan).      │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⚙️ TAB 2: SMTP SETTINGS (Integrasi Provider Email Kustom):                                             │
+│  - [🔘 ON] Enable custom SMTP (Buka kunci kustomisasi HTML template & naikkan batas limit)            │
+│  - Sender Email / Name : noreply@mariflow.app / "MariFlow Team"                                        │
+│  - Host & Port         : smtp.resend.com / smtp.sendgrid.net (Port 465 SSL / 587 TLS)                  │
+│  - Anti-Spam Interval  : 60 detik (Minimum jeda pengiriman per user)                                   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 21.1 Perbedaan Email Bawaan (*Built-in Pool*) vs Custom SMTP Provider
+
+| Fitur | Email Bawaan Supabase (Free Tier) | Custom SMTP (Resend / SendGrid / Brevo) |
+| :--- | :--- | :--- |
+| **Alamat Pengirim (*From*)** | `noreply@mail.app.supabase.io` (Domain bersama) | `notifications@mariflow.app` (Domain Brand Sendiri) |
+| **Kustomisasi Template** | 🔒 **Terkunci** (Subjek & Body tidak bisa diedit) | 🟢 **Bebas Di-kustom** (HTML, CSS Tailwind, Logo SaaS) |
+| **Batas Pengiriman (*Rate Limit*)** | Sangat terbatas: **3-4 email per jam** | **30+ email/jam hingga puluhan ribu/hari** |
+| **Reputasi Inbox / Spam** | Rentan masuk folder Promosi/Spam | Sangat tinggi (Didukung SPF, DKIM, DMARC domain sendiri) |
+
+---
+
+### 21.2 📑 6 Template Otentikasi Utama & Variabel Dinamisnya
+
+Saat Anda mengaktifkan Custom SMTP, Anda dapat mendesain ulang seluruh template email menggunakan variabel template Go:
+
+1. **`Confirm sign up`**:
+   - Tautan verifikasi: `{{ .ConfirmationURL }}`
+   - Token OTP angka: `{{ .Token }}`
+2. **`Invite user`**:
+   - Tautan undangan: `{{ .ConfirmationURL }}`
+3. **`Magic link or OTP`**:
+   - Tautan login instan tanpa kata sandi.
+4. **`Change email address`**:
+   - Mengirim token verifikasi ganda ke email lama dan email baru.
+5. **`Reset password`**:
+   - Tautan pengaturan ulang kata sandi yang terhubung ke halaman `/reset-password` di Vue router.
+6. **`Reauthentication`**:
+   - Kode OTP verifikasi identitas sebelum pengguna melakukan tindakan sensitif (seperti menghapus seluruh Workspace).
+
+---
+
+### 21.3 🛡️ 7 Notifikasi Peringatan Keamanan (*Security Notifications*)
+
+Di bagian bawah tab Templates, terdapat sakelar notifikasi keamanan akun:
+- **`Password changed`**: Mengirim email otomatis saat kata sandi user berhasil diubah.
+- **`Email address changed`**: Memperingatkan user jika email login akunnya diubah.
+- **`Phone number changed`**: Memperingatkan user jika nomor telepon diganti.
+- **`Sign-in method linked / removed`**: Notifikasi saat akun Google/GitHub baru ditautkan atau dilepas.
+- **`MFA method added / removed`**: Notifikasi peringatan saat aplikasi authenticator 2FA (TOTP) diaktifkan atau dinonaktifkan.
+
+---
+
+### 21.4 ⚙️ Konfigurasi Custom SMTP Provider (Tab `SMTP Settings`)
+
+Untuk menghubungkan provider seperti **Resend**, **SendGrid**, **Mailgun**, atau **AWS SES**:
+
+1. **`Sender email address` & `Sender name`**:
+   - Contoh: `noreply@mariflow.app` dan nama `MariFlow Notifikasi`.
+2. **`Host` & `Port number`**:
+   - Host: `smtp.resend.com` (atau `smtp.sendgrid.net`).
+   - Port: **`465`** (SSL) atau **`587`** (TLS / STARTTLS).
+   - ⚠️ *Peringatan*: Jangan gunakan Port 25 karena sebagian besar ISP dan cloud hosting memblokir port tersebut untuk mencegah spam bot.
+3. **`Minimum interval per user` (`60 seconds`)**:
+   - Jeda waktu tunggu anti-spam. Mencegah user mengklik tombol "Kirim Ulang Email" berulang kali dalam waktu singkat.
+4. **`Username` & `Password`**:
+   - Kredensial API Key SMTP Anda (disimpan terenkripsi secara aman di database Supabase).
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
