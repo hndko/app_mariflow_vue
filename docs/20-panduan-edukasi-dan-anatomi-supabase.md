@@ -41,6 +41,12 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [14.2 4 Ekstensi Utama yang Wajib Aktif untuk MariFlow](#142-4-ekstensi-utama-yang-wajib-aktif-enabled-by-default-untuk-mariflow)
     - [14.3 Ekstensi Pilihan SaaS Paling Berguna untuk Fitur Lanjutan](#143-ekstensi-pilihan-saas-paling-berguna-untuk-pengembangan-fitur-lanjutan)
     - [14.4 Cara Mengaktifkan Ekstensi via SQL Script](#144-cara-mengaktifkan-ekstensi-via-sql-script)
+15. [Panduan Lengkap Optimasi Query & Database Indexes (Query Optimization Masterclass)](#-15-panduan-lengkap-optimasi-query--database-indexes-query-optimization-masterclass)
+    - [15.1 Mengapa Database Index Sangat Penting bagi SaaS Multi-Tenant?](#151-mengapa-database-index-sangat-penting-bagi-saas-multi-tenant)
+    - [15.2 Anatomi Tipe-Tipe Index di PostgreSQL & Rekomendasi Penggunaannya](#152-anatomi-tipe-tipe-index-di-postgresql--rekomendasi-penggunaannya)
+    - [15.3 Teknik Optimasi Lanjutan (Composite, Partial & Covering Index)](#153-teknik-optimasi-lanjutan-advanced-saas-indexing-strategies)
+    - [15.4 Memeriksa Kinerja Query dengan EXPLAIN ANALYZE](#154-memeriksa-kinerja-query-dengan-explain-analyze)
+    - [15.5 Fitur Supabase Index Advisor](#155-fitur-supabase-index-advisor-tombol-di-kanan-atas)
 
 ---
 
@@ -737,7 +743,104 @@ CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA extensions;
 
 ---
 
+## ⚡ 15. Panduan Lengkap Optimasi Query & Database Indexes (*Query Optimization Masterclass*)
+
+Menu **Database ➔ Indexes** (icon ⚡) dan panduan resmi [Supabase Query Optimization](https://supabase.com/docs/guides/database/query-optimization) menjelaskan strategi krusial untuk memastikan database MariFlow tetap cepat, hemat memori, dan mampu melayani ribuan request per detik tanpa *slow queries*.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ Database Indexes  [schema public ▼]  [🔍 Search for an index...]         [📖 Docs] [💡 Index Advisor]│
+├──────────────────────────┬─────────────────────────────────────────────────────────────────────────────┤
+│ TABLE                    │ COLUMNS                                  │ NAME                             │
+├──────────────────────────┼──────────────────────────────────────────┼──────────────────────────────────┤
+│ public.workspaces        │ owner_id                                 │ idx_workspaces_owner_id          │
+│ public.workspace_members │ workspace_id, user_id                   │ idx_workspace_members_ws_user    │
+│ public.projects          │ workspace_id, status                     │ idx_projects_workspace_status    │
+│ public.tasks             │ workspace_id, status, assigned_to        │ idx_tasks_workspace_status_pic  │
+│ public.tasks             │ created_at DESC                          │ idx_tasks_created_at_desc        │
+└──────────────────────────┴──────────────────────────────────────────┴──────────────────────────────────┘
+```
+
+---
+
+### 15.1 Mengapa Database Index Sangat Penting bagi SaaS Multi-Tenant?
+
+Tanpa indeks, setiap kali pengguna membuka papan Kanban di MariFlow, PostgreSQL harus melakukan **Sequential Scan (Seq Scan)** — yaitu membaca jutaan baris data dari awal hingga akhir disk satu per satu.
+
+Dengan membuat **Index**, PostgreSQL membangun struktur data pohon seimbang (**B-Tree**) yang bertindak seperti *Daftar Isi Buku*. Query pencarian dapat langsung melompat ke baris yang dituju dalam waktu mikrodetik (**Index Scan**).
+
+```text
+Tanpa Index (Seq Scan):  [Baris 1] ➔ [Baris 2] ➔ [Baris 3] ... ➔ [Baris 100.000] (Lambat: ~350ms)
+Dengan Index (B-Tree):   [Root Node] ➔ [Branch Node] ➔ [Leaf Pointer]             (Cepat: ~2ms 🚀)
+```
+
+---
+
+### 15.2 Anatomi Tipe-Tipe Index di PostgreSQL & Rekomendasi Penggunaannya
+
+Saat membuat indeks di Supabase, Anda dapat memilih tipe struktur data berikut:
+
+| Tipe Index | Karakteristik & Operator yang Didukung | Kapan Digunakan di MariFlow SaaS? |
+| :--- | :--- | :--- |
+| **`B-Tree`** *(Default & Paling Populer)* | Mendukung pencarian kesetaraan (`=`), perbandingan (`<`, `>`, `<=`, `>=`), rentang (`BETWEEN`, `IN`), dan pengurutan (`ORDER BY`). | **Wajib di seluruh Foreign Key**: `workspace_id`, `project_id`, `assigned_to`, dan kolom tanggal `due_date`. |
+| **`GIN`** *(Generalized Inverted Index)* | Indeks terbalik untuk mencari elemen di dalam array (`text[]`), dokumen JSON (`jsonb` dengan operator `@>`, `?`), dan pencarian teks penuh (*Full-Text Search* `tsvector`). | Digunakan jika tugas memiliki kolom `tags text[]` atau `metadata jsonb`. |
+| **`GiST`** *(Generalized Search Tree)* | Indeks hierarkis untuk data geometri spasial (PostGIS) dan tipe data rentang waktu (`tsrange`). | Digunakan jika fitur pelacakan durasi kerja (*Time Tracking Range*) diaktifkan. |
+| **`BRIN`** *(Block Range Index)* | Indeks berukuran sangat kecil (hanya beberapa KB) untuk tabel raksasa (jutaan baris) yang tersimpan berurutan secara fisik. | Sangat ideal untuk tabel riwayat log sistem **`activity_logs`** pada kolom `created_at`. |
+| **`Hash`** | Hanya mendukung pencocokan kesetaraan persis (`=`). | Jarang digunakan karena B-Tree jauh lebih fleksibel. |
+
+---
+
+### 15.3 Teknik Optimasi Lanjutan (*Advanced SaaS Indexing Strategies*)
+
+#### 1. Composite Index (Indeks Gabungan Multi-Kolom)
+Jika query frontend Anda sering memfilter berdasarkan beberapa kolom sekaligus (misal: mengambil tugas berdasarkan `workspace_id` dan `status`):
+```sql
+-- Mempercepat query: SELECT * FROM tasks WHERE workspace_id = '...' AND status = 'in_progress'
+CREATE INDEX idx_tasks_workspace_status ON public.tasks (workspace_id, status);
+```
+
+#### 2. Partial Index (Indeks Sebagian / Bersyarat)
+Teknik brilian untuk menghemat ruang disk hingga **80%** di Free Tier dengan hanya mengindeks data aktif:
+```sql
+-- Hanya mengindeks tugas yang BELUM selesai (mengabaikan jutaan riwayat tugas 'completed')
+CREATE INDEX idx_active_tasks ON public.tasks (workspace_id) 
+WHERE status != 'completed';
+```
+
+#### 3. Covering Index dengan Klausul `INCLUDE`
+Menyertakan kolom payload tambahan ke dalam indeks agar PostgreSQL tidak perlu membuka tabel utama (*Index-Only Scan*):
+```sql
+CREATE INDEX idx_tasks_lookup ON public.tasks (workspace_id) 
+INCLUDE (title, priority);
+```
+
+---
+
+### 15.4 Memeriksa Kinerja Query dengan `EXPLAIN ANALYZE`
+
+Untuk membuktikan apakah query Anda sudah optimal dan menggunakan indeks, jalankan perintah `EXPLAIN ANALYZE` di **SQL Editor**:
+
+```sql
+EXPLAIN ANALYZE
+SELECT id, title, priority 
+FROM public.tasks 
+WHERE workspace_id = '10000000-0000-0000-0000-000000000001' 
+  AND status = 'in_progress';
+```
+
+**Hasil yang Diharapkan**:
+- Muncul teks `Index Scan using idx_tasks_workspace_status ...` (Bukan `Seq Scan`).
+- `Execution Time`: Kurang dari `< 5ms`.
+
+---
+
+### 15.5 Fitur Supabase Index Advisor (Tombol di Kanan Atas)
+- Tombol **`Index Advisor`** pada dashboard Supabase secara cerdas menganalisis log riwayat query aplikasi Anda dan secara otomatis merekomendasikan query `CREATE INDEX` yang paling berdampak untuk mempercepat performa database!
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
