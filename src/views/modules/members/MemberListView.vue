@@ -289,6 +289,7 @@ const filteredMembers = computed(() => {
 })
 
 const getRoleBadgeVariant = (role: string) => {
+  if (role === 'superadmin') return 'primary'
   if (role === 'owner') return 'primary'
   if (role === 'admin') return 'info'
   if (role === 'member') return 'success'
@@ -296,6 +297,7 @@ const getRoleBadgeVariant = (role: string) => {
 }
 
 const formatRole = (role?: string) => {
+  if (role === 'superadmin') return '👑 Superadmin'
   if (role === 'owner') return 'Owner'
   if (role === 'admin') return 'Admin'
   if (role === 'member') return 'Member'

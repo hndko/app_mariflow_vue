@@ -131,16 +131,6 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
-  {
-    path: '/superadmin',
-    name: 'SuperadminPortal',
-    component: () => import('@/views/modules/superadmin/SuperadminPortalView.vue'),
-    meta: {
-      title: 'Superadmin SaaS Portal',
-      layout: 'app-modules',
-      requiresAuth: true,
-    },
-  },
 
   // 404 Catch-All
   {

@@ -282,11 +282,6 @@ const menuGroups = [
         name: "Supabase Lab",
         path: "/supabase-lab",
       },
-      {
-        icon: GridIcon,
-        name: "👑 Superadmin Portal",
-        path: "/superadmin",
-      },
     ],
   },
 ];

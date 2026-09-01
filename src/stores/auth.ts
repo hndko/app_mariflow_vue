@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/services/supabase'
 import { authService } from '@/services/auth/auth.service'
-import type { Profile } from '@/types/database.types'
+import type { Profile, UserRole } from '@/types/database.types'
 import type { User, Session } from '@supabase/supabase-js'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -13,7 +13,8 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!user.value)
-  const isSuperadmin = computed(() => !!profile.value?.is_superadmin)
+  const isSuperadmin = computed(() => profile.value?.role === 'superadmin')
+  const userRole = computed<UserRole>(() => profile.value?.role || 'owner')
   const userName = computed(() => profile.value?.full_name || user.value?.user_metadata?.full_name || user.value?.email?.split('@')[0] || 'User')
   const userAvatar = computed(() => profile.value?.avatar_url || '/images/user/user-01.jpg')
   const userEmail = computed(() => user.value?.email || '')
@@ -163,6 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     isAuthenticated,
     isSuperadmin,
+    userRole,
     userName,
     userAvatar,
     userEmail,
