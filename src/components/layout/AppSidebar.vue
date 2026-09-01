@@ -240,78 +240,53 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
-    title: "Menu",
+    title: "MariFlow SaaS",
     items: [
       {
         icon: GridIcon,
         name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+        path: "/dashboard",
       },
       {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
+        icon: BoxCubeIcon,
+        name: "Workspaces",
+        path: "/workspaces",
+      },
+      {
+        icon: DocsIcon,
+        name: "Projects",
+        path: "/projects",
+      },
+      {
+        icon: ListIcon,
+        name: "Tasks (Kanban)",
+        path: "/tasks",
       },
       {
         icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-      },
-
-      {
-        name: "Forms",
-        icon: ListIcon,
-        subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
-        ],
+        name: "Team Members",
+        path: "/members",
       },
       {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-      },
-      {
-        name: "Pages",
-        icon: PageIcon,
-        subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
-        ],
+        icon: MailIcon,
+        name: "Notifications",
+        path: "/notifications",
       },
     ],
   },
   {
-    title: "Others",
+    title: "Settings & Lab",
     items: [
       {
-        icon: PieChartIcon,
-        name: "Charts",
-        subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
-        ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
+        icon: UserCircleIcon,
+        name: "Profile Settings",
+        path: "/settings/profile",
       },
       {
         icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
+        name: "Supabase Lab",
+        path: "/supabase-lab",
       },
-      // ... Add other menu items here
     ],
   },
 ];

@@ -1,14 +1,16 @@
 <template>
   <div class="relative" ref="dropdownRef">
     <button
-      class="flex items-center text-gray-700 dark:text-gray-400"
+      class="flex items-center text-gray-700 dark:text-gray-400 cursor-pointer"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+      <span class="mr-3 overflow-hidden rounded-full h-10 w-10 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+        <img :src="authStore.userAvatar" alt="User" class="h-full w-full object-cover" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-semibold text-sm text-gray-800 dark:text-gray-200">
+        {{ authStore.userName }}
+      </span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -16,60 +18,74 @@
     <!-- Dropdown Start -->
     <div
       v-if="dropdownOpen"
-      class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+      class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-99999"
     >
-      <div>
-        <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
+      <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+        <span class="block font-semibold text-gray-800 text-sm dark:text-white">
+          {{ authStore.userName }}
         </span>
-        <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+        <span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400 truncate">
+          {{ authStore.userEmail }}
         </span>
       </div>
 
-      <ul class="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
-        <li v-for="item in menuItems" :key="item.href">
+      <ul class="flex flex-col gap-1 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+        <li>
           <router-link
-            :to="item.href"
-            class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+            to="/settings/profile"
+            @click="closeDropdown"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-700 rounded-lg group hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
           >
-            <!-- SVG icon would go here -->
-            <component
-              :is="item.icon"
-              class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-            />
-            {{ item.text }}
+            <UserCircleIcon class="w-4 h-4 text-gray-500" />
+            Pengaturan Profil
+          </router-link>
+        </li>
+        <li>
+          <router-link
+            to="/workspaces"
+            @click="closeDropdown"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-700 rounded-lg group hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+          >
+            <SettingsIcon class="w-4 h-4 text-gray-500" />
+            Kelola Workspace
+          </router-link>
+        </li>
+        <li>
+          <router-link
+            to="/supabase-lab"
+            @click="closeDropdown"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-700 rounded-lg group hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+          >
+            <InfoCircleIcon class="w-4 h-4 text-gray-500" />
+            Supabase Lab
           </router-link>
         </li>
       </ul>
-      <router-link
-        to="/signin"
-        @click="signOut"
-        class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+
+      <button
+        type="button"
+        @click="handleLogout"
+        class="flex items-center gap-3 px-3 py-2 mt-2 text-xs font-medium text-error-600 rounded-lg hover:bg-error-50 dark:hover:bg-error-500/10 transition cursor-pointer text-left w-full"
       >
-        <LogoutIcon
-          class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-        />
-        Sign out
-      </router-link>
+        <LogoutIcon class="w-4 h-4 text-error-500" />
+        Keluar (Sign out)
+      </button>
     </div>
     <!-- Dropdown End -->
   </div>
 </template>
 
-<script setup>
-import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
-import { RouterLink } from 'vue-router'
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const dropdownOpen = ref(false)
-const dropdownRef = ref(null)
-
-const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
-]
+const dropdownRef = ref<HTMLElement | null>(null)
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
@@ -79,14 +95,14 @@ const closeDropdown = () => {
   dropdownOpen.value = false
 }
 
-const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
+const handleLogout = async () => {
   closeDropdown()
+  await authStore.logout()
+  router.push('/login')
 }
 
-const handleClickOutside = (event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     closeDropdown()
   }
 }
