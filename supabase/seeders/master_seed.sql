@@ -175,14 +175,48 @@ DECLARE
     ws_main_id     UUID := '10000000-0000-0000-0000-000000000001'::UUID;
     ws_client_id   UUID := '10000000-0000-0000-0000-000000000002'::UUID;
     ws_fintech_id  UUID := '10000000-0000-0000-0000-000000000003'::UUID;
-BEGIN
+    -- Ambil User IDs dari profiles berdasarkan email @example.com
     SELECT id INTO superadmin_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1;
     SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
     SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
     SELECT id INTO viewer_uid FROM public.profiles WHERE email = 'viewer@example.com' LIMIT 1;
 
+    -- Fallback berjenjang agar owner_id TIDAK AKAN PERNAH NULL:
     IF owner_uid IS NULL THEN owner_uid := superadmin_uid; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
+
+    -- Jika database masih benar-benar kosong, buat auth user & profile darurat
+    IF owner_uid IS NULL THEN
+        owner_uid := '00000000-0000-0000-0000-000000000002'::UUID;
+
+        INSERT INTO auth.users (
+            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        ) VALUES (
+            owner_uid,
+            '00000000-0000-0000-0000-000000000000',
+            'authenticated',
+            'authenticated',
+            'owner@example.com',
+            crypt('password', gen_salt('bf')),
+            NOW(),
+            '{"provider":"email","providers":["email"]}',
+            '{"full_name":"Budi Santoso (Owner)"}',
+            NOW(),
+            NOW()
+        ) ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.profiles (id, full_name, email, role, created_at, updated_at)
+        VALUES (owner_uid, 'Budi Santoso (Owner)', 'owner@example.com', 'owner'::public.user_role, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+    END IF;
+
+    -- Pastikan user roles lainnya tidak null
+    IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
+    IF member_uid IS NULL THEN member_uid := owner_uid; END IF;
+    IF viewer_uid IS NULL THEN viewer_uid := owner_uid; END IF;
 
     -- Insert Workspaces
     INSERT INTO public.workspaces (id, name, slug, description, owner_id, created_at, updated_at)
@@ -219,6 +253,7 @@ BEGIN
         name = EXCLUDED.name,
         slug = EXCLUDED.slug,
         description = EXCLUDED.description,
+        owner_id = EXCLUDED.owner_id,
         updated_at = NOW();
 
     -- Insert Members
@@ -291,7 +326,10 @@ DECLARE
 BEGIN
     SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
-    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
+    
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
 
     INSERT INTO public.projects (id, workspace_id, name, description, status, start_date, due_date, created_by, created_at, updated_at)
@@ -372,7 +410,9 @@ BEGIN
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
     SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
 
-    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
     IF member_uid IS NULL THEN member_uid := owner_uid; END IF;
 
@@ -563,7 +603,9 @@ BEGIN
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
     SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
 
-    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
     IF member_uid IS NULL THEN member_uid := owner_uid; END IF;
 

@@ -18,7 +18,10 @@ DECLARE
 BEGIN
     SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
-    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
+    
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
 
     INSERT INTO public.projects (id, workspace_id, name, description, status, start_date, due_date, created_by, created_at, updated_at)

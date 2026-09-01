@@ -18,7 +18,9 @@ BEGIN
     SELECT id INTO admin_uid FROM public.profiles WHERE email = 'admin@example.com' LIMIT 1;
     SELECT id INTO member_uid FROM public.profiles WHERE email = 'member@example.com' LIMIT 1;
 
-    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM public.profiles ORDER BY created_at ASC LIMIT 1; END IF;
+    IF owner_uid IS NULL THEN SELECT id INTO owner_uid FROM auth.users ORDER BY created_at ASC LIMIT 1; END IF;
     IF admin_uid IS NULL THEN admin_uid := owner_uid; END IF;
     IF member_uid IS NULL THEN member_uid := owner_uid; END IF;
 
