@@ -194,6 +194,7 @@ DECLARE
     ws_main_id     UUID := '10000000-0000-0000-0000-000000000001'::UUID;
     ws_client_id   UUID := '10000000-0000-0000-0000-000000000002'::UUID;
     ws_fintech_id  UUID := '10000000-0000-0000-0000-000000000003'::UUID;
+BEGIN
     -- Ambil User IDs dari profiles berdasarkan email @example.com
     SELECT id INTO superadmin_uid FROM public.profiles WHERE email = 'superadmin@example.com' LIMIT 1;
     SELECT id INTO owner_uid FROM public.profiles WHERE email = 'owner@example.com' LIMIT 1;
