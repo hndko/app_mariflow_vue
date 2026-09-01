@@ -525,7 +525,7 @@
         <BaseButton
           variant="danger"
           size="sm"
-          @click="handleDeleteTask"
+          @click="isDeleteConfirmModalOpen = true"
         >
           <template #startIcon>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -536,6 +536,40 @@
         </BaseButton>
         <BaseButton variant="outline" size="sm" @click="isDetailModalOpen = false">
           Tutup
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <!-- Delete Task Confirmation Modal -->
+    <BaseModal
+      :is-open="isDeleteConfirmModalOpen"
+      title="Hapus Tugas"
+      @close="isDeleteConfirmModalOpen = false"
+    >
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Apakah Anda yakin ingin menghapus tugas <strong>"{{ selectedTask?.title }}"</strong>?
+        </p>
+        <p class="text-xs text-error-600 dark:text-error-400">
+          Seluruh lampiran berkas dan komentar pada tugas ini akan dihapus secara permanen.
+        </p>
+      </div>
+
+      <template #footer>
+        <BaseButton variant="outline" @click="isDeleteConfirmModalOpen = false">
+          Batal
+        </BaseButton>
+        <BaseButton
+          variant="danger"
+          :loading="deletingTask"
+          @click="executeDeleteTask"
+        >
+          <template #startIcon>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </template>
+          Ya, Hapus Tugas
         </BaseButton>
       </template>
     </BaseModal>
@@ -583,6 +617,8 @@ const createError = ref('')
 const isDetailModalOpen = ref(false)
 const selectedTask = ref<Task | null>(null)
 const newCommentText = ref('')
+const isDeleteConfirmModalOpen = ref(false)
+const deletingTask = ref(false)
 
 const priorityOptions = [
   { value: 'low', label: 'Rendah (Low)' },
@@ -749,10 +785,17 @@ const onAttachmentAdded = async (fileItem: UploadFileItem) => {
   }
 }
 
-const handleDeleteTask = async () => {
-  if (selectedTask.value && confirm(`Hapus tugas "${selectedTask.value.title}"?`)) {
+const executeDeleteTask = async () => {
+  if (!selectedTask.value) return
+  deletingTask.value = true
+  try {
     await taskStore.deleteTask(selectedTask.value.id)
+    isDeleteConfirmModalOpen.value = false
     isDetailModalOpen.value = false
+  } catch (err: any) {
+    console.error('Delete task failed:', err)
+  } finally {
+    deletingTask.value = false
   }
 }
 </script>

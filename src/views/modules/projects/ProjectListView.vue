@@ -212,6 +212,40 @@
         </BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Delete Project Confirmation Modal -->
+    <BaseModal
+      :is-open="isDeleteModalOpen"
+      title="Hapus Proyek"
+      @close="isDeleteModalOpen = false"
+    >
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Apakah Anda yakin ingin menghapus proyek <strong>"{{ targetDeleteProject?.name }}"</strong>?
+        </p>
+        <p class="text-xs text-error-600 dark:text-error-400">
+          Tindakan ini permanen. Seluruh tugas kanban di dalam proyek ini akan ikut terhapus.
+        </p>
+      </div>
+
+      <template #footer>
+        <BaseButton variant="outline" @click="isDeleteModalOpen = false">
+          Batal
+        </BaseButton>
+        <BaseButton
+          variant="danger"
+          :loading="deleting"
+          @click="handleDeleteProject"
+        >
+          <template #startIcon>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </template>
+          Ya, Hapus Proyek
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -244,6 +278,10 @@ const formStatus = ref<ProjectStatus>('active')
 const formDueDate = ref('')
 const submitting = ref(false)
 const modalError = ref('')
+
+const isDeleteModalOpen = ref(false)
+const targetDeleteProject = ref<Project | null>(null)
+const deleting = ref(false)
 
 const statusOptions = [
   { value: 'planning', label: 'Perencanaan (Planning)' },
@@ -365,9 +403,21 @@ const handleSaveProject = async () => {
   }
 }
 
-const confirmDelete = async (project: Project) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus proyek "${project.name}"?`)) {
-    await projectStore.deleteProject(project.id)
+const confirmDelete = (project: Project) => {
+  targetDeleteProject.value = project
+  isDeleteModalOpen.value = true
+}
+
+const handleDeleteProject = async () => {
+  if (!targetDeleteProject.value) return
+  deleting.value = true
+  try {
+    await projectStore.deleteProject(targetDeleteProject.value.id)
+    isDeleteModalOpen.value = false
+  } catch (err: any) {
+    console.error('Delete project failed:', err)
+  } finally {
+    deleting.value = false
   }
 }
 </script>

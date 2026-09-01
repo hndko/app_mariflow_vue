@@ -228,6 +228,40 @@
         </BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Delete/Remove Member Confirmation Modal -->
+    <BaseModal
+      :is-open="isRemoveModalOpen"
+      title="Keluarkan Anggota"
+      @close="isRemoveModalOpen = false"
+    >
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Apakah Anda yakin ingin mengeluarkan <strong>{{ targetRemoveMember?.profile?.full_name || targetRemoveMember?.profile?.email }}</strong> dari workspace ini?
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Anggota ini tidak akan lagi memiliki akses ke proyek dan tugas di workspace ini.
+        </p>
+      </div>
+
+      <template #footer>
+        <BaseButton variant="outline" @click="isRemoveModalOpen = false">
+          Batal
+        </BaseButton>
+        <BaseButton
+          variant="danger"
+          :loading="removing"
+          @click="handleRemoveMember"
+        >
+          <template #startIcon>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </template>
+          Ya, Keluarkan Anggota
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -259,6 +293,10 @@ const inviteError = ref('')
 const isChangeRoleModalOpen = ref(false)
 const selectedMember = ref<WorkspaceMember | null>(null)
 const updatedRole = ref<UserRole>('member')
+
+const isRemoveModalOpen = ref(false)
+const targetRemoveMember = ref<WorkspaceMember | null>(null)
+const removing = ref(false)
 
 const roleOptions = [
   { value: 'admin', label: 'Admin (Mengelola Anggota & Proyek)' },
@@ -352,10 +390,22 @@ const handleUpdateRole = async () => {
   feedbackMessage.value = 'Peran anggota berhasil diperbarui.'
 }
 
-const confirmRemove = async (member: WorkspaceMember) => {
-  if (confirm(`Apakah Anda yakin ingin mengeluarkan ${member.profile?.full_name || member.profile?.email} dari workspace ini?`)) {
-    await workspaceStore.removeMember(member.id)
+const confirmRemove = (member: WorkspaceMember) => {
+  targetRemoveMember.value = member
+  isRemoveModalOpen.value = true
+}
+
+const handleRemoveMember = async () => {
+  if (!targetRemoveMember.value) return
+  removing.value = true
+  try {
+    await workspaceStore.removeMember(targetRemoveMember.value.id)
+    isRemoveModalOpen.value = false
     feedbackMessage.value = 'Anggota berhasil dikeluarkan dari workspace.'
+  } catch (err: any) {
+    feedbackMessage.value = err.message || 'Gagal mengeluarkan anggota.'
+  } finally {
+    removing.value = false
   }
 }
 </script>
