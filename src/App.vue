@@ -26,6 +26,17 @@ const layouts: Record<string, any> = {
 }
 
 const currentLayout = computed(() => {
+  // Explicitly check for auth routes to prevent any flash of sidebar
+  const isAuthRoute =
+    route.path === '/login' ||
+    route.path === '/register' ||
+    route.path === '/forgot-password' ||
+    route.path === '/reset-password'
+
+  if (isAuthRoute) {
+    return AppAuthLayout
+  }
+
   const layoutName = (route.meta?.layout as string) || 'app-modules'
   return layouts[layoutName] || AppModulesLayout
 })

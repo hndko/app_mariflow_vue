@@ -19,4 +19,7 @@ app.use(pinia)
 app.use(router)
 app.use(VueApexCharts)
 
-app.mount('#app')
+// Wait for router to be ready to prevent flash of wrong layout or unauthenticated content
+router.isReady().then(() => {
+  app.mount('#app')
+})
