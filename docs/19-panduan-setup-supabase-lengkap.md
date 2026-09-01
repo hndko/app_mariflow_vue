@@ -97,9 +97,13 @@ Buka file `.env` dan isi kredensial Supabase Anda:
 # ==============================================================================
 # PENTING: Gunakan ANON KEY (Kunci Publik). Dilarang keras menaruh SERVICE_ROLE_KEY di frontend!
 
-VITE_SUPABASE_URL=https://xxxxxxxxxxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_URL=https://rtazqheauyiujjteburi.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxxxxxxxxxxxxxxx
 ```
+
+> [!TIP]
+> **Cara Mengambil Anon Key**:
+> Pada dashboard project `mariflow-dev`, lihat bagian **"Get connected"** lalu klik kartu **"API Keys"** (atau buka menu **Project Settings** ➔ **API**). Salin nilai **`anon` `public`** key ke variabel `VITE_SUPABASE_ANON_KEY`.
 
 ---
 
@@ -108,11 +112,10 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxxxxxxxxxxxxxxx
 Terdapat **2 cara** untuk menyiapkan backend Supabase pada lingkungan lokal:
 
 #### Opsi A: Menggunakan Supabase Cloud Free Tier (*Paling Direkomendasikan & Cepat*)
-1. Masuk ke [database.new](https://database.new) untuk membuat project baru di Supabase Cloud.
-2. Beri nama project (contoh: `mariflow-dev`).
-3. Tentukan Password Database dan pilih region terdekat (misal: `Singapore (ap-southeast-1)`).
-4. Setelah project selesai dibuat (~1-2 menit), buka menu **Project Settings** ➔ **API**.
-5. Salin **Project URL** ke `VITE_SUPABASE_URL` dan **anon / public key** ke `VITE_SUPABASE_ANON_KEY` di file `.env` Anda.
+1. Masuk ke [database.new](https://database.new) untuk membuat project baru di Supabase Cloud (contoh: `mariflow-dev`).
+2. Region Database: **`Southeast Asia (Singapore) ap-southeast-1` 🇸🇬** (latensi rendah ~15-25ms).
+3. Pada halaman **Project Overview**, salin **Project URL** (`https://rtazqheauyiujjteburi.supabase.co`) ke `VITE_SUPABASE_URL`.
+4. Klik tombol **API Keys** pada kartu **Get connected**, salin **anon / public key** ke `VITE_SUPABASE_ANON_KEY` di file `.env` Anda.
 
 #### Opsi B: Menggunakan Supabase Local CLI (Docker)
 Jika Anda ingin 100% offline menggunakan Docker Desktop:
@@ -138,14 +141,16 @@ Eksekusi file migrasi SQL yang berada di folder `supabase/migrations/` secara **
 1. `supabase/migrations/20260902_000001_create_mariflow_schema.sql` (Schema DDL, Tabel, Relasi FK, Triggers, RLS Policies)
 2. `supabase/migrations/20260902_000002_seed_demo_data.sql` (Data Awal Mock/Demo Profil, Workspace, Proyek, dan Tugas)
 3. `supabase/migrations/20260902_000003_role_dashboard_analytics.sql` (Fungsi RPC Agregasi Statistik Dashboard Multi-Role)
+4. `supabase/migrations/20260902_000004_add_superadmin_role.sql` (Penambahan Role Superadmin ke Enum `user_role`)
 
 #### Cara Eksekusi via Supabase Dashboard:
-1. Buka dashboard project Supabase Anda.
-2. Di sidebar kiri, klik icon **SQL Editor** (icon `>_`).
+1. Buka dashboard project `mariflow-dev` di Supabase.
+2. Di sidebar kiri, klik menu **SQL Editor** (icon `>_`).
 3. Klik tombol **+ New query**.
 4. Buka file `supabase/migrations/20260902_000001_create_mariflow_schema.sql`, salin seluruh kodenya, tempel (*paste*) ke SQL Editor, lalu klik tombol **Run**.
 5. Ulangi langkah di atas untuk file `20260902_000002_seed_demo_data.sql`.
 6. Ulangi langkah di atas untuk file `20260902_000003_role_dashboard_analytics.sql`.
+7. Ulangi langkah di atas untuk file `20260902_000004_add_superadmin_role.sql`.
 
 > [!TIP]
 > Jika menggunakan Supabase CLI lokal: cukup jalankan perintah `supabase db reset` atau `supabase migration up`.

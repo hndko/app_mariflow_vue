@@ -123,7 +123,7 @@ Saat Anda mengisi form di layar tersebut, ikuti panduan berikut:
 
 1. **Organization**: Biarkan terpilih `Mari Partner (FREE)`.
 2. **GitHub (optional)**: Pilih repository `app_mariflow_vue` (jika sudah terhubung).
-3. **Project Name**: Ketik `mariflow-backend`.
+3. **Project Name**: Ketik `mariflow-dev`.
 4. **Database Password**:
    - Klik **Generate a password**.
    - **PENTING**: Salin dan simpan kata sandi ini di catatan aman Anda.
@@ -134,22 +134,124 @@ Saat Anda mengisi form di layar tersebut, ikuti panduan berikut:
    - Pastikan **Automatically expose new tables** dicentang (☑️).
    - Centang juga **Enable automatic RLS** (☑️).
 7. Klik tombol hijau **`Create new project`**.
-8. Tunggu proses provisi server (~1-2 menit).
-9. Buka **Project Settings** ➔ **API** ➔ Salin `Project URL` dan `anon / public key` ke file `.env` proyek Anda!
+8. Tunggu proses provisi server (~1-2 menit) hingga status menjadi **Healthy**.
 
 ---
 
-## 🗄️ 7. Anatomi Menu Tingkat Project (Di Dalam Database)
+## 🖥️ 8. Anatomi Lengkap Project Dashboard (`Project Overview`)
 
-Setelah project selesai dibuat, jalankan file SQL migrasi di **SQL Editor**:
-1. `supabase/migrations/20260902_000001_create_mariflow_schema.sql`
-2. `supabase/migrations/20260902_000002_seed_demo_data.sql`
-3. `supabase/migrations/20260902_000003_role_dashboard_analytics.sql`
+Berdasarkan tangkapan layar antarmuka dashboard project `mariflow-dev`, berikut adalah penjelasan komprehensif seluruh komponennya:
 
-Lalu buat 2 bucket di menu **Storage**:
-- `avatars` (Public: ON)
-- `task-attachments` (Public: ON)
+```text
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ Mari Partner [FREE] / 📦 mariflow-dev / 🌿 main [PRODUCTION]            [Connect] [Search Ctrl+K]│
+├───────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                   │
+│  mariflow-dev                                       ┌──────────────────────────────────────────┐  │
+│  https://rtazqheauyiujjteburi.supabase.co [Copy]    │ 🗄️ Primary Database                      │  │
+│                                                     │ Southeast Asia (Singapore) ap-southeast-1│  │
+│  🟢 STATUS: Healthy      ⚙️ COMPUTE: NANO           │ CPU 2%  │ Disk 14% │ RAM 49% │ 5/60 conns │  │
+│  🐙 GITHUB: No repo      🌱 BRANCH: No branches     └──────────────────────────────────────────┘  │
+│  📜 MIGRATION: 0         💾 BACKUP: No backups                                                    │
+│                                                                                                   │
+│ ───────────────────────────────────────────────────────────────────────────────────────────────── │
+│  🔌 GET CONNECTED:                                                                                │
+│  [Framework]  [Server]  [Direct]  [ORM]  [MCP (AI Agent)]  [API Keys]                             │
+│                                                                                                   │
+│ ───────────────────────────────────────────────────────────────────────────────────────────────── │
+│  📊 METRICS (Last 60 mins):  12 Total Requests │ 91.7% Success Rate                               │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                  │
+│  │ 🌐 API GATEWAY  │ │ 📡 REALTIME     │ │ 📦 STORAGE      │ │ 🗄️ POSTGRES     │                  │
+│  │ 5 Requests      │ │ 4 Requests      │ │ 2 Requests      │ │ 1 Request       │                  │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘                  │
+│                                                                                                   │
+│ ───────────────────────────────────────────────────────────────────────────────────────────────── │
+│  🛡️ SECURITY & ADVISOR: Advisor found no issues (No security or performance issues found)        │
+│  📈 REPORTS: Build custom reports & query snippets                                                │
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.1 Kartu Status Utama (*Project Header & Compute Health*)
+
+1. **Project URL (`https://rtazqheauyiujjteburi.supabase.co`)**:
+   - URL endpoint HTTPS dasar untuk seluruh REST API, Auth, dan Storage requests dari frontend MariFlow.
+2. **Compute Tier (`NANO`)**:
+   - Tingkat mesin komputasi virtual PostgreSQL Anda. Nano menyediakan resource yang sangat efisien untuk pengembangan dan tim kecil.
+3. **Primary Database Health Widget**:
+   - **`CPU 2%`**: Beban komputasi prosesor server database. Sangat enteng.
+   - **`Disk 14%`**: Ruang penyimpanan disk SSD terpakai dari kuota 500 MB Free Tier.
+   - **`RAM 49%`**: Memori PostgreSQL terpakai (~500 MB RAM).
+   - **`5/60 conns`**: Jumlah koneksi database aktif saat ini (5 dari batas maksimal 60 koneksi langsung).
+
+---
+
+### 8.2 Bagian "Get Connected" (*Pintu Masuk Integrasi*)
+
+Pada kartu **Get connected**, Supabase menyediakan 6 jalur integrasi utama:
+
+1. **`Framework` (Client Library)**:
+   - Menampilkan snippet inisialisasi `@supabase/supabase-js` untuk framework modern (Vue 3, React, Next.js, Flutter, Swift, Svelte). Inilah yang kita gunakan di `src/services/supabase.ts`.
+2. **`Server` (API Handlers)**:
+   - Panduan membuat API route aman di backend server (Express, NestJS, Laravel, FastAPI).
+3. **`Direct` (Connection String)**:
+   - URI koneksi database PostgreSQL standar (`postgresql://postgres:[PASSWORD]@db.rtazqheauyiujjteburi.supabase.co:5432/postgres`) untuk software database GUI seperti DBeaver, TablePlus, Navicat, atau pgAdmin.
+4. **`ORM` (Object-Relational Mapping)**:
+   - Konfigurasi untuk Prisma ORM, Drizzle, Kysely, TypeORM, atau Sequelize.
+5. **`MCP` (Model Context Protocol)**:
+   - **Fitur Baru Supabase**: Protokol standar terbuka yang memungkinkan AI Coding Agent (seperti Antigravity, Claude Code, Cursor) terhubung dan berinteraksi langsung dengan database Supabase secara cerdas dan aman!
+6. **`API Keys` (Kunci Kredensial Project)**:
+   - Kartu cepat untuk melihat dan menyalin **`anon` (public key)** untuk frontend dan **`service_role` (secret key)** untuk backend.
+
+---
+
+### 8.3 4 Pilar Metrik Layanan (*Service Metrics*)
+
+Supabase membagi aktivitas sistem ke dalam 4 pilar visual:
+1. **🌐 API GATEWAY**:
+   - Mengukur jumlah request REST API yang masuk via PostgREST (contoh: query tabel `workspaces`, `tasks`, `projects`).
+2. **📡 REALTIME**:
+   - Mengukur koneksi WebSocket live yang menyinkronkan data tugas kanban secara instan ke layar pengguna lain tanpa perlu refresh halaman.
+3. **📦 STORAGE**:
+   - Mengukur request upload/download berkas avatar dan lampiran tugas kanban ke Supabase Storage S3-compatible engine.
+4. **🗄️ POSTGRES**:
+   - Mengukur query langsung dan transaksi database PostgreSQL murni.
+
+---
+
+### 8.4 Security & Performance Advisor
+
+Supabase memiliki mesin audit internal pintar bernama **Supabase Advisor**:
+- **Security Advisor**: Secara berkala memeriksa apakah ada tabel publik tanpa Row Level Security (RLS), kolom sensitif yang terekspos, atau policy yang bocor (`USING (true)`).
+- **Performance Advisor**: Menganalisis query lambat (*slow queries*), merekomendasikan penambahan index pada foreign key yang sering difilter, serta mendeteksi query vacuum/bloat.
+- **Ask Assistant**: Tombol asisten AI interaktif bawaan Supabase untuk membantu Anda menulis query SQL rumit atau memecahkan kendala database.
+
+---
+
+## 🧭 9. Anatomi Lengkap 13 Menu Sidebar Kiri (*Project Level*)
+
+```text
+┌────────────────────────────────────────┬────────────────────────────────────────────────────────┐
+│ Menu Sidebar                           │ Fungsi Utama & Keterkaitannya dengan MariFlow          │
+├────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ 🏠 1. Project Overview                 │ Ringkasan status, URL, compute health, & traffic.       │
+│ 🗃️ 2. Table Editor                     │ Visual Spreadsheet editor untuk melihat & edit data DB.│
+│ 💻 3. SQL Editor                       │ Menjalankan file migrasi SQL DDL & DML skema MariFlow. │
+│ 🗄️ 4. Database                         │ Schema visualizer, foreign keys, triggers, RPC func.   │
+│ 🔑 5. Authentication                   │ User management, Email OTP, OAuth, & Redirect URLs.    │
+│ 📦 6. Storage                          │ Bucket file uploads (`avatars`, `task-attachments`).   │
+│ ⚡ 7. Edge Functions                   │ Serverless function Deno untuk webhook / background job│
+│ 📡 8. Realtime                         │ Konfigurasi realtime channel broadcast & Postgres sync.│
+│ 💡 9. Advisors                         │ Laporan keamanan RLS & rekomendasi performa query.     │
+│ 🔭 10. Observability                   │ Grafik latency, throughput, & pooler connection stats. │
+│ 📋 11. Logs                            │ Catatan log request API Gateway, Database, & Auth.     │
+│ 🧩 12. Integrations                    │ Menghubungkan GitHub, Vercel, Resend email SMTP, dll.  │
+│ ⚙️ 13. Project Settings                │ Konfigurasi API keys, Connection Pooling, & Timezone.  │
+└────────────────────────────────────────┴────────────────────────────────────────────────────────┘
+```
 
 ---
 
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
