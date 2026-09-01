@@ -15,6 +15,16 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
 5. [Anatomi Menu Organisasi — Bagian 3 (Compliance, Legal & Usage Metrics)](#-5-anatomi-menu-organisasi--bagian-3)
 6. [Panduan Langkah-demi-Langkah Pengisian Form untuk MariFlow SaaS](#-6-panduan-langkah-demi-langkah-pengisian-form-mariflow)
 7. [Anatomi Menu Tingkat Project (Backend & Database Engine)](#-7-anatomi-menu-tingkat-project)
+8. [Anatomi Lengkap Project Dashboard (Project Overview)](#-8-anatomi-lengkap-project-dashboard-project-overview)
+   - [8.1 Kartu Status Utama (Compute & Database Health)](#81-kartu-status-utama-project-header--compute-health)
+   - [8.2 Bagian "Get Connected" (Pintu Integrasi)](#82-bagian-get-connected-pintu-masuk-integrasi)
+   - [8.3 4 Pilar Metrik Layanan (API, Realtime, Storage, Postgres)](#83-4-pilar-metrik-layanan-service-metrics)
+   - [8.4 Security & Performance Advisor](#84-security--performance-advisor)
+9. [Anatomi Lengkap 13 Menu Sidebar Kiri Project](#-9-anatomi-lengkap-13-menu-sidebar-kiri-project-level)
+10. [Bedah Lengkap Menu Table Editor & Modal "Create a New Table"](#-10-bedah-lengkap-menu-table-editor--modal-create-a-new-table)
+    - [10.1 Komponen Halaman Utama Table Editor & Batch Edit](#101-komponen-halaman-utama-table-editor)
+    - [10.2 Anatomi Modal Drawer "Create a new table under public"](#102-anatomi-modal-drawer-create-a-new-table-under-public)
+    - [10.3 Penjelasan Detail Tiap Opsi Pembuatan Tabel (RLS, Realtime, Columns, FK, API)](#103-penjelasan-detail-tiap-opsi-pembuatan-tabel)
 
 ---
 
@@ -253,5 +263,139 @@ Supabase memiliki mesin audit internal pintar bernama **Supabase Advisor**:
 
 ---
 
+## 🗃️ 10. Bedah Lengkap Menu Table Editor & Modal "Create a New Table"
+
+Menu **Table Editor** (icon 🗃️ pada sidebar) adalah spreadsheet visual interaktif Supabase untuk mengelola dan memvisualisasikan data tabel PostgreSQL tanpa perlu menulis query SQL manual.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🗃️ Table Editor  [schema public ▼]  [+ New table]  [🔍 Search tables...]                           │
+├──────────────────────────┬─────────────────────────────────────────────────────────────────────────┤
+│                          │  ┌───────────────────────────────────────────────────────────────────┐  │
+│  DAFTAR TABEL:           │  │ ➕ Create a table (Design & create a new database table)           │  │
+│  (No tables or views)    │  └───────────────────────────────────────────────────────────────────┘  │
+│                          │                                                                         │
+│  - profiles              │  🕒 RECENT ITEMS: No recent items yet                                   │
+│  - workspaces            │                                                                         │
+│  - workspace_members     │  ┌───────────────────────────────────────────────────────────────────┐  │
+│  - projects              │  │ 💡 NEW FEATURE: Queue row edits in Table Editor                   │  │
+│  - tasks                 │  │ Batch multiple row edits and review them before saving to database│  │
+│                          │  └───────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────┴─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 10.1 Komponen Halaman Utama Table Editor
+
+1. **Dropdown Pemilih Schema (`schema public ▼`)**:
+   - **`public`**: Schema utama tempat tabel aplikasi MariFlow berada (`profiles`, `workspaces`, `tasks`, dll).
+   - **`auth`**: Schema privat milik Supabase Auth (`auth.users`, `auth.identities`, `auth.sessions`).
+   - **`storage`**: Schema internal sistem penyimpanan file (`storage.buckets`, `storage.objects`).
+   - **`realtime`**: Schema replikasi pesan WebSocket.
+   - **`vault`**: Schema penyimpanan rahasia terenkripsi.
+
+2. **Fitur "Queue row edits in Table Editor" (Batch Editing)**:
+   - Fitur cerdas yang memungkinkan Anda mengedit puluhan sel data sekaligus layaknya Excel/Airtable secara offline di browser.
+   - Perubahan akan di-review terlebih dahulu sebelum dikirim bersamaan (*atomic batch update*) ke server PostgreSQL. Hal ini mencegah terjadinya database lock dan request spam ke database.
+
+---
+
+### 10.2 Anatomi Modal Drawer "Create a new table under public"
+
+Saat tombol **`+ New table`** diklik, Supabase membuka drawer konfigurasi tabel:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Create a new table under public                                                               [X]  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                    │
+│  Name:        [ workspaces                                                               ]         │
+│  Description: [ Workspace multi-tenant untuk tim MariFlow                                ] (Opt)   │
+│                                                                                                    │
+│  ☑️ Enable Row Level Security (RLS)  [RECOMMENDED]                                                 │
+│     Restrict access to your table by enabling RLS and writing Postgres policies.                   │
+│                                                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ ℹ️ Policies are required to query data                                                       │  │
+│  │    You need to create an access policy before you can query data from this table.            │  │
+│  │    Without a policy, querying this table will return an empty array of results.              │  │
+│  │    [ 📖 Documentation ]                                                                      │  │
+│  └──────────────────────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                                    │
+│  ☐ Enable Realtime                                                                                 │
+│     Broadcast changes on this table to authorized subscribers.                                     │
+│                                                                                                    │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  COLUMNS                                       [ 📖 About data types ]  [ 📥 Import data from CSV ]│
+│  ┌──┬──────────────┬──────────────┬──────────────────┬──────────────┬───────────────────────────┐  │
+│  │::│ Name         │ Type         │ Default Value    │ Primary (PK) │ Options (Gear)            │  │
+│  ├──┼──────────────┼──────────────┼──────────────────┼──────────────┼───────────────────────────┤  │
+│  │::│ id           │ uuid         │ uuid_generate_v4()│     ☑️       │ Is Unique: Yes            │  │
+│  │::│ name         │ text         │ NULL             │     ☐        │ Is Nullable: No           │  │
+│  │::│ slug         │ text         │ NULL             │     ☐        │ Is Unique: Yes            │  │
+│  │::│ created_at   │ timestamptz  │ now()            │     ☐        │                           │  │
+│  └──┴──────────────┴──────────────┴──────────────────┴──────────────┴───────────────────────────┘  │
+│  [ + Add column ]                                                                                  │
+│                                                                                                    │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  FOREIGN KEYS                                                                                      │
+│  [ + Add foreign key relation ] ➔ (Contoh: owner_id REFERENCES auth.users(id) ON DELETE CASCADE)   │
+│                                                                                                    │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  DATA API ACCESS                                                                                   │
+│  (🔘 ON) Allow this table to be queried via Supabase client libraries or the API directly          │
+│                                                                                                    │
+│                                                                               [Cancel] [Save Ctrl↵]│
+└────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 10.3 Penjelasan Detail Tiap Opsi Pembuatan Tabel
+
+#### 1. 🛡️ Enable Row Level Security (RLS) [RECOMMENDED]
+- **Fungsi**: Mengaktifkan proteksi tingkat baris (*Row Level Security*) pada tabel PostgreSQL.
+- **Mengapa Sangat Penting?**:
+  - Di Supabase, jika RLS aktif dan belum ada policy dibuat, maka **seluruh query dari client frontend akan mengembalikan array kosong (`[]`)**.
+  - Ini adalah desain keamanan *Secure by Default* agar data sensitif pengguna tidak bocor ke publik.
+  - Untuk MariFlow, setiap tabel wajib memiliki policy berbasis keanggotaan `workspace_members`.
+
+#### 2. 📡 Enable Realtime
+- **Fungsi**: Memasukkan tabel ke dalam publikasi PostgreSQL `supabase_realtime`.
+- **Penggunaan di MariFlow**:
+  - Wajib dicentang untuk tabel **`tasks`** dan **`task_comments`** agar perpindahan kartu kanban dan komentar baru langsung muncul di layar anggota tim lain secara realtime tanpa perlu reload browser!
+
+#### 3. 🧩 Columns Builder (Definisi Kolom Data)
+- **`Name`**: Nama kolom dengan aturan baku huruf kecil (*snake_case*).
+- **`Type`**: Tipe data PostgreSQL:
+  - `uuid`: Identifier unik global (128-bit) yang aman dari tebakan ID sekuensial.
+  - `text` / `varchar`: String teks dinamis.
+  - `timestamptz`: Tanggal & waktu lengkap beserta timezone (UTC).
+  - `bool`: Nilai boolean (`true` / `false`).
+  - `jsonb`: Struktur data JSON biner untuk metadata fleksibel.
+  - `int8` / `int4`: Bilangan bulat (*integer*).
+- **`Default Value`**:
+  - `now()`: Otomatis mengisi waktu saat data dibuat.
+  - `uuid_generate_v4()`: Otomatis menghasilkan ID UUID acak.
+- **`Primary (PK)`**: Menandai kolom sebagai kunci primer unik tabel.
+- **`Options (Gear Icon)`**:
+  - `Is Unique`: Memastikan tidak ada data duplikat pada kolom tersebut (misal: `slug` workspace).
+  - `Is Array`: Mendukung penyimpanan array (misal: `text[]`).
+
+#### 4. 🔗 Foreign Keys Relation
+- **Fungsi**: Membangun integritas referensial antar tabel di PostgreSQL.
+- **Aksi Penghapusan (*Action on Delete*)**:
+  - **`CASCADE`**: Jika baris induk dihapus, seluruh baris anak otomatis terhapus (contoh: jika sebuah *Workspace* dihapus, semua *Proyek* dan *Tugas* di dalamnya otomatis terhapus bersih).
+  - **`SET NULL`**: Jika baris induk dihapus, kolom anak disetel menjadi `NULL` (contoh: jika user dihapus, kolom `assigned_to` pada tugas menjadi kosong tapi tugas tidak ikut terhapus).
+  - **`RESTRICT`**: Mencegah penghapusan baris induk jika masih memiliki data anak terkait.
+
+#### 5. 🌐 Data API Access Toggle Switch
+- **Fungsi**: Menentukan apakah tabel ini otomatis diekspos ke REST PostgREST API dan SDK `@supabase/supabase-js`.
+- **Status Default (ON)**: Wajib aktif agar frontend MariFlow dapat melakukan query `supabase.from('tasks').select('*')`.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
