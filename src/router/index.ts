@@ -173,7 +173,7 @@ router.beforeEach(async (to, _from, next) => {
     // In production with active Supabase credentials, redirect to /login
     // During local dev without active server session, let user navigate or prompt login
     if (!authStore.session && !localStorage.getItem('mariflow_guest_bypass')) {
-      return next({ name: 'Login', query: { redirect: to.fullPath } })
+      return next({ name: 'Login' })
     }
   }
 
