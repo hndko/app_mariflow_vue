@@ -62,6 +62,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [18.1 Dua Jenis Replikasi: Read Replicas vs Pipelines](#181-dua-jenis-replikasi-di-supabase-read-replicas-vs-pipelines)
     - [18.2 Mengapa SaaS Membutuhkan Replikasi ke Google BigQuery?](#182-mengapa-saas-membutuhkan-replikasi-ke-google-bigquery)
     - [18.3 Status Paket: FREE Tier vs PRO Tier (Solusi Analitik Free Tier)](#183--status-paket-free-tier-vs-pro-tier)
+19. [Bedah Lengkap Database Backups & Database Migrations](#-19-bedah-lengkap-database-backups--database-migrations)
+    - [19.1 Database Backups: Scheduled, PITR, & Strategi Backup Free Tier](#191--database-backups-scheduled-pitr--strategi-backup-free-tier)
+    - [19.2 Panduan Backup Manual 100% Gratis untuk MariFlow di FREE Tier](#192--panduan-backup-manual-100-gratis-untuk-mariflow-di-free-tier)
+    - [19.3 Database Migrations: Mengelola Skema via Supabase CLI](#193--database-migrations-mengelola-skema-via-supabase-cli)
 
 ---
 
@@ -1099,7 +1103,91 @@ Karena saat ini kita menggunakan paket Free Tier, kita tidak perlu khawatir:
 
 ---
 
+## 💾 19. Bedah Lengkap Database Backups & Database Migrations
+
+Kelompok **PLATFORM** (`Backups` & `Migrations`) menangani manajemen kelangsungan bisnis (*Disaster Recovery*) dan kontrol versi skema database (*Database Infrastructure as Code*).
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 💾 DATABASE BACKUPS & MIGRATIONS OVERVIEW                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📦 DATABASE BACKUPS:                                                                                   │
+│  ├─ [Scheduled Backups]    : Backup harian tengah malam (Retensi 7 hari) ──► 🔒 PRO TIER               │
+│  ├─ [Point in Time (PITR)] : Rollback ke detik tertentu via WAL Logs     ──► 🔒 PRO TIER ADD-ON ($100) │
+│  ├─ [Restore to New Proj]  : Kloning snapshot ke project baru [BETA]     ──► 🔒 PRO TIER               │
+│  └─ [Manual CLI Dump]      : Backup via 'supabase db dump' atau pg_dump  ──► 🟢 FREE TIER (100% GRATIS)│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚀 DATABASE MIGRATIONS (Supabase CLI):                                                                 │
+│  1. $ supabase link --project-ref <PROJECT_REF>  (Hubungkan repo lokal ke Cloud)                      │
+│  2. $ supabase migration new <migration_name>     (Buat file DDL SQL timestamped)                      │
+│  3. $ supabase db push                           (Terapkan perubahan skema ke Cloud)                  │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 19.1 📦 Database Backups: Scheduled, PITR, & Strategi Backup Free Tier
+
+Di menu **Database ➔ Backups**, terdapat 3 tab utama:
+
+#### 1. Tab `Scheduled backups` (Cadangan Harian Otomatis)
+- **Cara Kerja**: Supabase secara otomatis mengambil salinan database setiap hari sekitar tengah malam (berdasarkan zona waktu region project, misal: Singapore UTC+8).
+- **🔒 Status Tier**: Fitur otomatis ini memerlukan **Pro Plan** (retensi riwayat hingga 7 hari).
+
+#### 2. Tab `Point in time` (Point-in-Time Recovery / PITR)
+- **Cara Kerja**: Memanfaatkan rekaman log transaksi kontinu PostgreSQL (**Write-Ahead Logging / WAL**). Jika seorang developer atau admin tidak sengaja menghapus tabel produksi pada pukul 14:32:15, database dapat diputar mundur (*rollback*) persis ke detik **14:32:14**!
+- **🔒 Status Tier**: Fitur enterprise add-on untuk Pro Plan (mulai dari \$100/bulan).
+
+#### 3. Tab `Restore to new project` [BETA]
+- **Cara Kerja**: Memungkinkan Anda memulihkan snapshot database langsung ke proyek Supabase baru yang terisolasi tanpa menimpa database produksi yang sedang berjalan (sangat cocok untuk membuat lingkungan *Staging / Testing*).
+- **🔒 Status Tier**: Memerlukan paket Pro Plan.
+
+---
+
+### 19.2 💡 Panduan Backup Manual 100% Gratis untuk MariFlow di FREE Tier
+
+Meskipun fitur auto-backup UI terkunci di Free Tier, Anda tetap dapat mem-backup database MariFlow kapan saja secara mandiri tanpa biaya sepeser pun:
+
+```bash
+# Opsi 1: Menggunakan Supabase CLI (Rekomendasi)
+supabase db dump -f backup_mariflow_$(date +%Y%m%d).sql
+
+# Opsi 2: Menggunakan pg_dump standar PostgreSQL (Direct Connection)
+pg_dump -h db.rtazqheauyiujjteburi.supabase.co -U postgres -d postgres -F p -f backup_mariflow.sql
+```
+
+---
+
+### 19.3 🚀 Database Migrations: Mengelola Skema via Supabase CLI
+
+Menu **Database ➔ Migrations** mencatat riwayat versioning perubahan struktur tabel database layaknya Git untuk skema SQL.
+
+#### Alur Kerja Standar (*Best Practice Developer*):
+1. **Hubungkan Local Repo ke Cloud**:
+   ```bash
+   supabase link --project-ref rtazqheauyiujjteburi
+   ```
+2. **Buat File Migrasi Baru**:
+   ```bash
+   supabase migration new tambah_kolom_prioritas_tasks
+   ```
+   *Perintah ini akan membuat file SQL baru di folder `supabase/migrations/<timestamp>_tambah_kolom_prioritas_tasks.sql`.*
+3. **Tulis Script DDL SQL**:
+   Isi file migrasi dengan query pembuatan tabel, indeks, atau RLS policies.
+4. **Deploy Migrasi ke Cloud**:
+   ```bash
+   supabase db push
+   ```
+   *Supabase CLI akan secara otomatis mengecek migrasi mana yang belum pernah dijalankan di cloud dan menerapkannya secara transaksional atomic.*
+
+> [!TIP]
+> **Struktur Migrasi MariFlow**:
+> Proyek MariFlow kita telah menerapkan standar ini secara sempurna dengan seluruh DDL migrasi tersimpan rapi di [supabase/migrations/](file:///d:/laragon/www/app_mariflow_vue/supabase/migrations/) dan seeder di [supabase/seeders/](file:///d:/laragon/www/app_mariflow_vue/supabase/seeders/).
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
