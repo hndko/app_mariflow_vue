@@ -148,6 +148,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [37.1 Evolusi API Keys: Modern Keys vs Legacy Keys](#371--evolusi-api-keys-modern-keys-vs-legacy-keys)
     - [37.2 Modernisasi JWT Keys: Kriptografi Asimetris ECC (P-256)](#372--modernisasi-jwt-keys-kriptografi-asimetris-ecc-p-256)
     - [37.3 Log Drains: Streaming Log Real-Time (PRO TIER ADD-ON)](#373--log-drains-streaming-log-real-time--pro-tier-add-on)
+38. [Bedah Lengkap Project Add-ons & Detail Integrasi Bawaan (Data API & Vault)](#-38-bedah-lengkap-project-add-ons--detail-integrasi-bawaan-data-api--vault)
+    - [38.1 Bedah Fitur Menu Settings Add-ons](#381--bedah-fitur-menu-settings--add-ons)
+    - [38.2 Detail Integrasi Data API (PostgREST)](#382--detail-integrasi-data-api-postgrest)
+    - [38.3 Detail Integrasi Vault (supabase_vault)](#383--detail-integrasi-vault-supabase_vault)
 
 ---
 
@@ -2613,7 +2617,71 @@ Di tab **Settings ➔ Log Drains**:
 
 ---
 
+## ⚡🔐 38. Bedah Lengkap Project Add-ons & Detail Integrasi Bawaan (Data API & Vault)
+
+Sub-menu **Settings ➔ Add-ons** serta halaman detail integrasi **Data API** dan **Vault** (di bawah menu `INTEGRATIONS`) mengelola fitur infrastruktur tingkat lanjut dan konfigurasi keamanan data terenkripsi.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡🔐 PROJECT ADD-ONS, DATA API & VAULT ARCHITECTURE                                                    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛒 1. PROJECT ADD-ONS (Peningkatan Kapabilitas Berbayar):                                              │
+│  ├─ [Dedicated IPv4] : Alokasi IP publik IPv4 statis permanen ($4/bulan / untuk migrasi database lama).│
+│  ├─ [PITR Backups]   : Point-in-Time Recovery (Restore database ke detik tertentu di masa lampau).    │
+│  └─ [Custom Domain]  : Menyajikan API & Auth di bawah domain sendiri ($10/bulan).                      │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ </ > 2. DATA API DETAIL (PostgREST OAuth App):                                                         │
+│  - RESTful Endpoint  : https://rtazqheauyiujjteburi.supabase.co/rest/v1/                               │
+│  - Source Mapping    : Primary Database (Singapore) ──► Men-generate endpoint CRUD otomatis.          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔒 3. VAULT DETAIL (Postgres Module - supabase_vault):                                                 │
+│  - Mekanisme Kerja   : Menyimpan rahasia & kunci enkripsi terenkripsi (AES-256) di disk.               │
+│  - Keamanan Backup   : Backup atau streaming replikasi tetap terenkripsi dan tidak bisa dipalsukan.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 38.1 🛒 Bedah Fitur Menu `Settings ➔ Add-ons`
+
+Di tab **Add-ons**, terdapat 3 opsi *upgrade* infrastruktur tambahan:
+
+1. **`Dedicated IPv4 address` (🔒 $4/bulan)**:
+   - **Konteks**: Seluruh dunia sedang bertransisi ke IPv6. Supabase Cloud secara bawaan menggunakan IPv6.
+   - **Fungsi Add-on**: Jika Anda perlu menghubungkan Supabase ke sistem legacy atau jaringan kantor yang hanya mendukung IPv4, Anda dapat memesan 1 alamat IPv4 statis khusus untuk project Anda.
+2. **`Point in time recovery (PITR)` (🔒 PRO Plan Add-on)**:
+   - **Konteks**: Backup harian biasa hanya bisa mengembalikan data ke jam 00:00 tadi malam.
+   - **Fungsi PITR**: Memungkinkan Anda memutar balik (*rollback*) database ke **detik yang sangat presisi** (misal: *"Kembalikan database ke kondisi tepat pukul 14:23:15 sebelum seseorang tidak sengaja menjalankan perintah DROP TABLE"*).
+3. **`Custom domain` (🔒 $10/bulan)**:
+   - Menghubungkan domain kustom branded milik Anda sendiri (misal: `https://api.mariflow.com`).
+
+---
+
+### 38.2 `</>` Detail Integrasi Data API (`PostgREST`)
+
+Di menu **Integrations ➔ Data API**:
+- **Tipe**: *OAuth App / Official Supabase*.
+- **Endpoint RESTful Proyek MariFlow**:
+  `https://rtazqheauyiujjteburi.supabase.co/rest/v1/`
+- **Sakelar `Enable Data API` (🔘 Aktif)**:
+  - Mengizinkan browser dan pustaka Supabase JavaScript (`@supabase/supabase-js`) untuk melakukan query relasional terhadap seluruh tabel di skema `public` dengan pengawasan RLS.
+
+---
+
+### 38.3 🔒 Detail Integrasi Vault (`supabase_vault`)
+
+Di menu **Integrations ➔ Vault**:
+- **Tipe**: *Postgres Module / Extension*.
+- **Ekstensi Terpasang**: `supabase_vault` (*Installed*).
+- **Cara Kerja Keamanan di Balik Layar**:
+  - Vault menyimpan tabel *Secrets & Encryption Keys* di disk menggunakan algoritma *Authenticated Encryption*.
+  - Data hanya didekripsi saat dibaca melalui Postgres View oleh pengguna yang berhak.
+  - Setiap file backup database dan aliran streaming replikasi **tetap terenkripsi 100%**, sehingga data rahasia tidak akan pernah bocor meskipun file backup database dicuri.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
