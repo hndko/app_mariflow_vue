@@ -2,28 +2,33 @@
   <button
     :type="type"
     :disabled="disabled || loading"
+    :title="title || ariaLabel || text"
+    :aria-label="ariaLabel || title || text"
     :class="[
-      'inline-flex items-center justify-center font-medium transition duration-200 focus:outline-hidden focus:ring-3 cursor-pointer',
+      'inline-flex items-center justify-center font-semibold transition-all duration-150 focus:outline-hidden focus:ring-3 select-none',
       isIconOnly ? iconSizeClasses[size] : sizeClasses[size],
       variantClasses[variant],
       rounded ? 'rounded-full' : 'rounded-lg',
-      { 'cursor-not-allowed opacity-50': disabled || loading },
+      disabled ? 'opacity-50 cursor-not-allowed shadow-none' : 'cursor-pointer',
       customClass,
     ]"
-    :title="title || ariaLabel"
-    :aria-label="ariaLabel || title"
     @click="handleClick"
   >
     <!-- Loading Spinner -->
     <svg
       v-if="loading"
-      class="animate-spin text-current"
-      :class="isIconOnly ? 'w-4 h-4' : 'w-4 h-4 mr-2'"
-      xmlns="http://www.w3.org/2000/svg"
+      class="animate-spin -ml-0.5 mr-2 h-4 w-4 text-current"
       fill="none"
       viewBox="0 0 24 24"
     >
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      ></circle>
       <path
         class="opacity-75"
         fill="currentColor"
@@ -31,43 +36,43 @@
       ></path>
     </svg>
 
-    <!-- Prefix / Start Icon -->
-    <span
-      v-if="!loading && (startIcon || $slots.startIcon || (isIconOnly && ($slots.default || icon)))"
-      class="flex items-center justify-center"
-      :class="!isIconOnly && ($slots.default || text) ? 'mr-2' : ''"
-    >
-      <slot name="startIcon">
-        <component :is="startIcon || icon" class="w-4 h-4" />
+    <!-- Icon-Only Button Content -->
+    <template v-if="isIconOnly">
+      <slot name="icon">
+        <component :is="icon" v-if="icon" class="w-4 h-4" />
       </slot>
-    </span>
+    </template>
 
-    <!-- Text Content -->
-    <span v-if="!isIconOnly && ($slots.default || text)" class="truncate">
-      <slot>{{ text }}</slot>
-    </span>
-
-    <!-- End Icon -->
-    <span
-      v-if="!loading && (endIcon || $slots.endIcon)"
-      class="ml-2 flex items-center justify-center"
-    >
-      <slot name="endIcon">
-        <component :is="endIcon" class="w-4 h-4" />
-      </slot>
-    </span>
+    <!-- Standard Button Content (Icon + Text) -->
+    <template v-else>
+      <span v-if="$slots.startIcon || startIcon" class="shrink-0">
+        <slot name="startIcon">
+          <component :is="startIcon" class="w-4 h-4" />
+        </slot>
+      </span>
+      <span v-if="text || $slots.default">
+        <slot>{{ text }}</slot>
+      </span>
+      <span v-if="$slots.endIcon || endIcon" class="shrink-0">
+        <slot name="endIcon">
+          <component :is="endIcon" class="w-4 h-4" />
+        </slot>
+      </span>
+    </template>
   </button>
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 interface BaseButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'success'
   size?: 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md'
   type?: 'button' | 'submit' | 'reset'
   text?: string
-  startIcon?: object | Function
-  endIcon?: object | Function
-  icon?: object | Function
+  startIcon?: Component | object
+  endIcon?: Component | object
+  icon?: Component | object
   isIconOnly?: boolean
   disabled?: boolean
   loading?: boolean

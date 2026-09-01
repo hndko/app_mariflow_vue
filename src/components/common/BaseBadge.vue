@@ -18,12 +18,14 @@
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 interface BaseBadgeProps {
   variant?: 'primary' | 'success' | 'warning' | 'error' | 'info' | 'gray'
   size?: 'sm' | 'md'
   text?: string
   dot?: boolean
-  icon?: object | Function
+  icon?: Component | object
 }
 
 withDefaults(defineProps<BaseBadgeProps>(), {

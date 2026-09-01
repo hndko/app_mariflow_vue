@@ -1,99 +1,120 @@
 <template>
-  <div class="w-full">
-    <label v-if="label" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+  <div class="w-full space-y-1.5">
+    <label
+      v-if="label"
+      :for="id"
+      class="block text-xs font-semibold text-gray-700 dark:text-gray-300"
+    >
       {{ label }}
       <span v-if="required" class="text-error-500">*</span>
     </label>
-    <div class="relative flex items-center">
-      <!-- Prefix Icon / Icon Group Left -->
-      <span
+
+    <div class="relative flex items-center rounded-lg">
+      <!-- Prefix Icon Slot / Prop -->
+      <div
         v-if="$slots.prefix || prefixIcon"
-        class="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-center pl-3.5 pr-2.5 text-gray-400 dark:text-gray-500 pointer-events-none z-10"
+        class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400"
       >
         <slot name="prefix">
           <component :is="prefixIcon" class="w-5 h-5" />
         </slot>
-      </span>
+      </div>
 
-      <!-- Select Dropdown -->
+      <!-- Native Select -->
       <select
         :id="id"
         :value="modelValue"
         :disabled="disabled"
         :required="required"
         :class="[
-          'h-11 w-full appearance-none rounded-lg border bg-transparent py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs transition focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90',
-          $slots.prefix || prefixIcon ? 'pl-11' : 'pl-4',
-          errorMessage
-            ? 'border-error-300 focus:border-error-500 focus:ring-error-500/10 dark:border-error-700'
-            : 'border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800',
-          disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800' : '',
+          'w-full rounded-lg border text-sm transition-colors duration-150 appearance-none focus:outline-hidden',
+          'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
+          $slots.prefix || prefixIcon ? 'pl-10' : 'pl-3.5',
+          'pr-10',
+          error
+            ? 'border-error-500 focus:border-error-500 focus:ring-2 focus:ring-error-500/20'
+            : 'border-gray-200 dark:border-gray-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 dark:focus:border-brand-400',
+          disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800' : 'cursor-pointer',
+          sizeClasses[size],
         ]"
-        @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
+        @change="onChange"
       >
         <option v-if="placeholder" value="" disabled :selected="!modelValue">
           {{ placeholder }}
         </option>
-        <slot>
-          <option
-            v-for="opt in options"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </slot>
+        <option
+          v-for="opt in options"
+          :key="String(opt.value)"
+          :value="opt.value"
+        >
+          {{ opt.label }}
+        </option>
       </select>
 
-      <!-- Chevron Icon -->
-      <span class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center pr-3.5 pointer-events-none text-gray-400 dark:text-gray-500">
-        <svg class="w-4 h-4 stroke-current" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 7.5L10 12.5L15 7.5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      <!-- Dropdown Chevron Suffix -->
+      <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
-      </span>
+      </div>
     </div>
 
-    <!-- Error / Helper Message -->
-    <p v-if="errorMessage" class="mt-1.5 text-xs text-error-500">
-      {{ errorMessage }}
+    <!-- Error / Hint Message -->
+    <p v-if="error" class="text-xs text-error-500 mt-1">
+      {{ error }}
     </p>
-    <p v-else-if="hint" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+    <p v-else-if="hint" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
       {{ hint }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-interface SelectOption {
+import type { Component } from 'vue'
+
+export interface SelectOption {
   value: string | number
   label: string
 }
 
 interface BaseSelectProps {
-  modelValue?: string | number
+  modelValue?: string | number | null
+  options: SelectOption[]
+  id?: string
   label?: string
   placeholder?: string
-  id?: string
-  required?: boolean
   disabled?: boolean
-  prefixIcon?: object | Function
-  options?: SelectOption[]
-  errorMessage?: string
+  required?: boolean
+  error?: string
   hint?: string
+  size?: 'sm' | 'md' | 'lg'
+  prefixIcon?: Component | object
 }
 
 withDefaults(defineProps<BaseSelectProps>(), {
   modelValue: '',
+  id: () => `select-${Math.random().toString(36).substring(2, 9)}`,
   label: '',
-  placeholder: 'Pilih salah satu...',
-  id: undefined,
-  required: false,
+  placeholder: '',
   disabled: false,
-  prefixIcon: undefined,
-  options: () => [],
-  errorMessage: '',
+  required: false,
+  error: '',
   hint: '',
+  size: 'md',
+  prefixIcon: undefined,
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'change'])
+
+const sizeClasses = {
+  sm: 'py-1.5 text-xs',
+  md: 'py-2.5 text-sm',
+  lg: 'py-3.5 text-base',
+}
+
+const onChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  emit('update:modelValue', target.value)
+  emit('change', target.value)
+}
 </script>

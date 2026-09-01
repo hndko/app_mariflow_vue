@@ -212,21 +212,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 
 import {
   GridIcon,
-  CalenderIcon,
   UserCircleIcon,
-  ChatIcon,
   MailIcon,
   DocsIcon,
-  PieChartIcon,
   ChevronDownIcon,
   HorizontalDots,
-  PageIcon,
-  TableIcon,
   ListIcon,
   PlugInIcon,
 } from "../../icons";
@@ -322,7 +317,7 @@ const startTransition = (el) => {
   el.style.height = "auto";
   const height = el.scrollHeight;
   el.style.height = "0px";
-  el.offsetHeight; // force reflow
+  void el.offsetHeight; // force reflow
   el.style.height = height + "px";
 };
 

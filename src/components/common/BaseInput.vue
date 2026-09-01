@@ -1,94 +1,114 @@
 <template>
-  <div class="w-full">
-    <label v-if="label" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+  <div class="w-full space-y-1.5">
+    <label
+      v-if="label"
+      :for="id"
+      class="block text-xs font-semibold text-gray-700 dark:text-gray-300"
+    >
       {{ label }}
       <span v-if="required" class="text-error-500">*</span>
     </label>
-    <div class="relative flex items-center">
-      <!-- Prefix Icon / Icon Group Left -->
-      <span
+
+    <div class="relative flex items-center rounded-lg">
+      <!-- Prefix Icon Slot / Prop -->
+      <div
         v-if="$slots.prefix || prefixIcon"
-        class="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-center pl-3.5 pr-2.5 text-gray-400 dark:text-gray-500 pointer-events-none"
+        class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400"
       >
         <slot name="prefix">
           <component :is="prefixIcon" class="w-5 h-5" />
         </slot>
-      </span>
+      </div>
 
-      <!-- Input Field -->
+      <!-- Native Input -->
       <input
         :id="id"
         :type="type"
         :value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
-        :readonly="readonly"
         :required="required"
         :class="[
-          'h-11 w-full rounded-lg border bg-transparent py-2.5 text-sm text-gray-800 shadow-theme-xs transition placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30',
-          $slots.prefix || prefixIcon ? 'pl-11' : 'pl-4',
-          $slots.suffix || suffixIcon ? 'pr-11' : 'pr-4',
-          errorMessage
-            ? 'border-error-300 focus:border-error-500 focus:ring-error-500/10 dark:border-error-700'
-            : 'border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800',
-          disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800' : '',
+          'w-full rounded-lg border text-sm transition-colors duration-150 focus:outline-hidden',
+          'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
+          'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+          $slots.prefix || prefixIcon ? 'pl-10' : 'pl-3.5',
+          $slots.suffix || suffixIcon ? 'pr-10' : 'pr-3.5',
+          error
+            ? 'border-error-500 focus:border-error-500 focus:ring-2 focus:ring-error-500/20'
+            : 'border-gray-200 dark:border-gray-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 dark:focus:border-brand-400',
+          disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800' : '',
+          sizeClasses[size],
         ]"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        @blur="$emit('blur', $event)"
-        @focus="$emit('focus', $event)"
+        @input="onInput"
+        @blur="emit('blur', $event)"
+        @focus="emit('focus', $event)"
       />
 
-      <!-- Suffix Icon / Icon Group Right -->
-      <span
+      <!-- Suffix Icon Slot / Prop -->
+      <div
         v-if="$slots.suffix || suffixIcon"
-        class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center pr-3.5 pl-2.5 text-gray-400 dark:text-gray-500"
+        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400"
       >
         <slot name="suffix">
           <component :is="suffixIcon" class="w-5 h-5" />
         </slot>
-      </span>
+      </div>
     </div>
 
-    <!-- Error / Helper Message -->
-    <p v-if="errorMessage" class="mt-1.5 text-xs text-error-500">
-      {{ errorMessage }}
+    <!-- Error / Hint Message -->
+    <p v-if="error" class="text-xs text-error-500 mt-1">
+      {{ error }}
     </p>
-    <p v-else-if="hint" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+    <p v-else-if="hint" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
       {{ hint }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 interface BaseInputProps {
-  modelValue?: string | number
-  label?: string
-  placeholder?: string
-  type?: string
+  modelValue?: string | number | null
   id?: string
-  required?: boolean
+  label?: string
+  type?: string
+  placeholder?: string
   disabled?: boolean
-  readonly?: boolean
-  prefixIcon?: object | Function
-  suffixIcon?: object | Function
-  errorMessage?: string
+  required?: boolean
+  error?: string
   hint?: string
+  size?: 'sm' | 'md' | 'lg'
+  prefixIcon?: Component | object
+  suffixIcon?: Component | object
 }
 
 withDefaults(defineProps<BaseInputProps>(), {
   modelValue: '',
+  id: () => `input-${Math.random().toString(36).substring(2, 9)}`,
   label: '',
-  placeholder: '',
   type: 'text',
-  id: undefined,
-  required: false,
+  placeholder: '',
   disabled: false,
-  readonly: false,
+  required: false,
+  error: '',
+  hint: '',
+  size: 'md',
   prefixIcon: undefined,
   suffixIcon: undefined,
-  errorMessage: '',
-  hint: '',
 })
 
-defineEmits(['update:modelValue', 'blur', 'focus'])
+const emit = defineEmits(['update:modelValue', 'blur', 'focus'])
+
+const sizeClasses = {
+  sm: 'py-1.5 text-xs',
+  md: 'py-2.5 text-sm',
+  lg: 'py-3.5 text-base',
+}
+
+const onInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', target.value)
+}
 </script>
