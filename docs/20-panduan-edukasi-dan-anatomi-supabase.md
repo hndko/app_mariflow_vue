@@ -79,6 +79,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [22.1 Kontrol Registrasi Pengguna (User Signups)](#221--kontrol-registrasi-pengguna-user-signups)
     - [22.2 Mengaktifkan Social Login di MariFlow (Google & GitHub)](#222--mengaktifkan-social-login-di-mariflow-google--github)
     - [22.3 Custom Auth Providers (Enterprise OIDC SSO)](#223--custom-auth-providers-new-enterprise-oidc-sso)
+23. [Bedah Lengkap Third-Party Auth (Integrasi Eksternal JWT: Clerk, Firebase, Auth0, & AWS Cognito)](#-23-bedah-lengkap-third-party-auth-integrasi-eksternal-jwt-clerk-firebase-auth0--aws-cognito)
+    - [23.1 Apa itu Third-Party Auth di Supabase?](#231-apa-itu-third-party-auth-di-supabase)
+    - [23.2 Bagaimana Cara Kerja Verifikasi JWT Eksternal dengan PostgreSQL RLS?](#232-bagaimana-cara-kerja-verifikasi-jwt-eksternal-dengan-postgresql-rls)
+    - [23.3 Rekomendasi untuk MariFlow SaaS](#233--rekomendasi-untuk-mariflow-saas)
 
 ---
 
@@ -1444,7 +1448,59 @@ Fitur **Custom Providers** memungkinkan MariFlow terhubung ke Identity Provider 
 
 ---
 
+## 🌐 23. Bedah Lengkap Third-Party Auth (Integrasi Eksternal JWT: Clerk, Firebase, Auth0, & AWS Cognito)
+
+Tab **Authentication ➔ Sign In / Providers ➔ `Third-Party Auth`** adalah fitur arsitektur decoupled di mana Anda dapat menggunakan penyedia identitas eksternal (*External Identity Provider*) untuk mengakses database PostgreSQL Supabase dengan tetap mempertahankan Row Level Security (RLS).
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌐 THIRD-PARTY AUTH ARCHITECTURE (External JWT Verification)                                           │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. User login di aplikasi via ──► [🟣 Clerk] / [🔥 Firebase] / [🟠 Auth0] / [🟪 AWS Cognito]          │
+│ 2. Provider menerbitkan JWT   ──► Ditandatangani dengan Private Key Provider (JWKS)                   │
+│ 3. Frontend panggil Supabase  ──► Request HTTP dengan header 'Authorization: Bearer <EXTERNAL_JWT>'    │
+│ 4. PostgREST API Gateway      ──► Memverifikasi JWT via Public Key JWKS ➔ auth.uid() tervalidasi!     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 23.1 Apa itu Third-Party Auth di Supabase?
+
+Secara standar, Supabase menggunakan modul internal **GoTrue** untuk mengelola pendaftaran user, kata sandi, dan menerbitkan token JWT.
+
+Namun jika aplikasi Anda sudah memiliki basis pengguna di sistem lain, Supabase memungkinkan Anda **mengabaikan GoTrue** dan langsung menggunakan token JWT yang diterbitkan oleh penyedia pihak ketiga:
+
+| Provider yang Didukung | Karakteristik Utama | Skenario Penggunaan |
+| :--- | :--- | :--- |
+| 🔥 **Firebase Auth** | Menggunakan token Google Identity Platform / Firebase. | Migrasi aplikasi dari Firebase Firestore ke database relasional PostgreSQL Supabase. |
+| 🟣 **Clerk** | Komponen UI Otentikasi modern dan manajemen user B2B multi-tenant yang sangat cepat. | Jika developer ingin menggunakan komponen UI Drop-in siap pakai dari Clerk namun tetap memakai PostgreSQL & RLS Supabase. |
+| 🔷 **WorkOS** | Spesialis Single Sign-On (SAML/OIDC) dan Directory Sync (SCIM) untuk klien Enterprise. | Aplikasi SaaS B2B yang melayani integrasi login korporat dengan Active Directory / Okta. |
+| 🟠 **Auth0** | Platform identitas enterprise dari Okta dengan rule/action pipeline yang sangat matang. | Perusahaan yang memiliki regulasi kepatuhan identitas ketat (HIPAA / SOC2). |
+| 🟪 **Amazon Cognito** | Layanan User Pools bawaan ekosistem AWS Cloud. | Aplikasi yang terintegrasi erat dengan AWS Lambda, S3, dan DynamoDB. |
+
+---
+
+### 23.2 Bagaimana Cara Kerja Verifikasi JWT Eksternal dengan PostgreSQL RLS?
+
+1. Anda mendaftarkan URL Issuer atau Public Key JWKS dari provider eksternal di menu **Add provider**.
+2. Saat request masuk ke Supabase, API Gateway PostgREST memvalidasi bahwa token tersebut benar-benar diterbitkan oleh Clerk/Firebase yang sah.
+3. Nilai klaim `sub` (Subject / User ID) di dalam token JWT otomatis dimasukkan ke dalam fungsi PostgreSQL **`auth.jwt()`** dan **`auth.uid()`**.
+4. **Hasilnya**: Seluruh aturan **Row Level Security (RLS)** yang telah kita buat di tabel `workspaces`, `projects`, dan `tasks` **tetap berjalan 100% aman dan otomatis** tanpa perlu mengubah satu baris pun kode database SQL!
+
+---
+
+### 23.3 💡 Rekomendasi untuk MariFlow SaaS
+
+- **Status MariFlow**: Aplikasi MariFlow kita menggunakan **Supabase Auth Native** (`Supabase Auth` tab).
+- **Keuntungan Memakai Supabase Auth Native**:
+  - 100% Gratis dan sudah terintegrasi bawaan dengan Pinia Store (`src/stores/auth.ts`) dan Database Trigger `handle_new_user()`.
+  - Tidak memerlukan biaya langganan MAU (*Monthly Active Users*) tambahan dari layanan pihak ketiga seperti Clerk atau Auth0.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
