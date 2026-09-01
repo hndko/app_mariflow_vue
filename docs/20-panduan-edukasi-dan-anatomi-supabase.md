@@ -32,6 +32,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [12.1 Anatomi Panel Kiri (Snippet Manager & References)](#121-anatomi-panel-kiri-snippet-manager--references)
     - [12.2 Fitur Unggulan Editor & Supabase AI (Ctrl+Shift+K)](#122-fitur-unggulan-editor--supabase-ai-ctrlshiftk)
     - [12.3 Panel Hasil Eksekusi: Tab Results & Chart](#123-panel-hasil-eksekusi-tab-results--chart)
+13. [Bedah Komprehensif Menu Database (Schema Visualizer, Functions, Triggers & Access Control)](#-13-bedah-komprehensif-menu-database-schema-visualizer-functions-triggers--access-control)
+    - [13.1 Kelompok 1: DATABASE MANAGEMENT (ERD, Functions RPC, Triggers, Enums, Extensions, Indexes, Publications)](#131-kelompok-1-database-management)
+    - [13.2 Kelompok 2: ACCESS CONTROL (Policies RLS, Database Roles)](#132-kelompok-2-access-control)
+    - [13.3 Kelompok 3: CONFIGURATION & PLATFORM (Settings, Replication, Backups, Migrations)](#133-kelompok-3-configuration--platform)
 
 ---
 
@@ -533,7 +537,121 @@ Supabase menyediakan dua tab visualisasi hasil query:
 
 ---
 
+## 🗄️ 13. Bedah Komprehensif Menu Database (Schema Visualizer, Functions, Triggers & Access Control)
+
+Menu **Database** (icon 🗄️ pada sidebar) adalah pusat kendali tingkat rendah (*low-level engine controller*) PostgreSQL di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🗄️ Database  [schema public ▼]                                                                         │
+├──────────────────────────┬─────────────────────────────────────────────────────────────────────────────┤
+│ 📂 DATABASE MANAGEMENT:  │                                                                             │
+│  - Schema Visualizer     │  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  - Tables                │  │ 🗺️ SCHEMA VISUALIZER (ER Diagram Interaktif)                          │  │
+│  - Functions (RPC)       │  │                                                                       │  │
+│  - Triggers              │  │  [workspaces] ────────1:N──────── [projects]                          │  │
+│  - Enumerated Types      │  │        │                              │                               │  │
+│  - Extensions            │  │        1:N                            1:N                             │  │
+│  - Indexes               │  │        ▼                              ▼                               │  │
+│  - Publications          │  │  [workspace_members]                  [tasks] ───1:N─── [task_comments]│  │
+│                          │  └───────────────────────────────────────────────────────────────────────┘  │
+│ 🛡️ ACCESS CONTROL:       │                                                                             │
+│  - Policies (RLS)        │  ⚡ DATABASE FUNCTIONS (RPC):                                               │
+│  - Roles (Postgres)      │  - rls_auto_enable (Definer)                                                │
+│                          │  - get_role_dashboard_analytics (RPC KPI Analytics)                         │
+│ ⚙️ CONFIGURATION:        │  - set_updated_at (Trigger Function)                                       │
+│  - Settings              │                                                                             │
+│                          │  🔔 DATABASE TRIGGERS:                                                      │
+│ 🚀 PLATFORM:             │  - set_profiles_updated_at (BEFORE UPDATE ON profiles)                      │
+│  - Replication [NEW]     │  - set_tasks_updated_at (BEFORE UPDATE ON tasks)                            │
+│  - Backups               │                                                                             │
+│  - Migrations            │                                                                             │
+└──────────────────────────┴─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 13.1 Kelompok 1: DATABASE MANAGEMENT
+
+#### 1. 🗺️ Schema Visualizer (Entity-Relationship Diagram Interaktif)
+- **Fungsi**: Secara otomatis menggambar diagram relasi database (ERD) visual dengan menghubungkan tabel, kolom Primary Key (PK), dan Foreign Key (FK) garis penghubung secara interaktif.
+- **Keterkaitannya dengan MariFlow**:
+  - Anda dapat melihat peta relasi utuh dari `profiles` ➔ `workspace_members` ➔ `workspaces` ➔ `projects` ➔ `tasks` ➔ `task_comments` tanpa perlu aplikasi diagram eksternal seperti Draw.io atau DBeaver.
+
+#### 2. 📋 Tables (Dashboard Metrik Tabel)
+- **Fungsi**: Menampilkan daftar seluruh tabel dalam skema beserta metrik penting:
+  - `COLUMNS`: Jumlah kolom pada tabel.
+  - `ROWS (ESTIMATED)`: Perkiraan jumlah baris data yang tersimpan.
+  - `SIZE (ESTIMATED)`: Perkiraan ukuran memori disk terpakai oleh tabel (dalam KB/MB).
+  - `REALTIME`: Menandai apakah tabel telah aktif di replikasi WebSocket `supabase_realtime`.
+
+#### 3. ⚡ Functions (Database Stored Procedures & Supabase RPC)
+- **Fungsi**: Menyimpan fungsi PL/pgSQL atau SQL yang dapat dipanggil langsung dari frontend Vue via `supabase.rpc('function_name', { params })`.
+- **Parameter Keamanan (*Security Context*)**:
+  - **`SECURITY DEFINER`**: Fungsi dieksekusi dengan hak akses pemilik (*superuser/postgres*), mengabaikan RLS sementara. Sangat berguna untuk fungsi agregasi KPI seperti `get_role_dashboard_analytics` agar dapat menghitung total statistik tanpa terhambat batasan baris individual.
+  - **`SECURITY INVOKER`**: Fungsi dieksekusi dengan hak akses pengguna yang sedang login (*auth.uid()*).
+
+#### 4. 🔔 Triggers (Pemicu Otomatis)
+- **Fungsi**: Mengeksekusi fungsi tertentu secara otomatis saat terjadi event database:
+  - **Tab `Data` (DML Triggers)**: Pemicu saat data di-`INSERT`, `UPDATE`, atau `DELETE`. Contoh: Trigger `set_updated_at()` yang otomatis memperbarui nilai kolom `updated_at` menjadi waktu sekarang setiap kali kartu tugas diedit.
+  - **Tab `Event` (DDL Triggers)**: Pemicu saat struktur skema berubah (`CREATE TABLE`, `DROP TABLE`). Contoh: `rls_auto_enable` yang otomatis mengaktifkan RLS saat tabel baru dibuat.
+  - **Database Webhooks**: Memanggil HTTP REST endpoint eksternal saat data berubah (misal: mengirim pesan Telegram / Slack saat tugas baru dibuat).
+
+#### 5. 🏷️ Enumerated Types (Custom ENUM Postgres)
+- **Fungsi**: Menyimpan daftar tipe data pilihan kustom yang konsisten di level database:
+  - `workspace_role`: `'owner'`, `'admin'`, `'member'`, `'viewer'`
+  - `project_status`: `'planning'`, `'active'`, `'completed'`, `'archived'`
+  - `task_status`: `'todo'`, `'in_progress'`, `'review'`, `'completed'`, `'cancelled'`
+  - `task_priority`: `'low'`, `'medium'`, `'high'`, `'urgent'`
+  - `user_role`: `'superadmin'`, `'owner'`, `'admin'`, `'member'`, `'viewer'`
+
+#### 6. 🔌 Extensions (Ekstensi Ekosistem PostgreSQL)
+- **Fungsi**: Mengaktifkan modul tambahan PostgreSQL dengan sekali klik (tanpa kompilasi server):
+  - `uuid-ossp`: Menghasilkan UUID v4 (`uuid_generate_v4()`).
+  - `pgcrypto`: Algoritma hashing kata sandi bcrypt (`crypt()`, `gen_salt()`).
+  - `pgvector`: Penyimpanan vector embedding berkecepatan tinggi untuk fitur AI Search / LLM RAG.
+  - `pg_cron`: Menjalankan scheduled cron job langsung di dalam database PostgreSQL.
+  - `http`: Melakukan panggilan HTTP request langsung dari fungsi SQL.
+
+#### 7. ⚡ Indexes (Indeks Pengoptimal Query)
+- **Fungsi**: Mempercepat query pencarian dan penyaringan data (*filtering*) hingga ratusan kali lipat.
+- **Wajib di MariFlow**: Indeks pada foreign key `workspace_id`, `project_id`, dan kolom status `status` serta `created_at DESC` untuk sorting cepat.
+
+#### 8. 📡 Publications (Replikasi Logis Realtime)
+- **Fungsi**: Mengatur publikasi PostgreSQL `supabase_realtime` yang menentukan tabel apa saja yang disiarkan ke client WebSocket frontend secara live.
+
+---
+
+### 13.2 Kelompok 2: ACCESS CONTROL
+
+#### 1. 🛡️ Policies (Row Level Security Visual Manager)
+- **Fungsi**: Tempat melihat, mengedit, dan mengaudit seluruh aturan RLS PostgreSQL secara visual. Anda dapat melihat policy mana yang aktif untuk operasi `SELECT`, `INSERT`, `UPDATE`, dan `DELETE`.
+
+#### 2. 👥 Roles (PostgreSQL Database Roles)
+- **Fungsi**: Hierarki akun sistem PostgreSQL internal:
+  - `anon`: Pengguna tamu publik (sebelum login).
+  - `authenticated`: Pengguna yang berhasil login dan memiliki token JWT valid.
+  - `service_role`: Kunci rahasia backend dengan bypass RLS penuh (Dilarang ditaruh di frontend).
+  - `postgres`: Superuser pemilik database.
+
+---
+
+### 13.3 Kelompok 3: CONFIGURATION & PLATFORM
+
+#### 1. ⚙️ Settings (Konfigurasi Engine Postgres)
+- Mengatur *Connection Pooling* (Supavisor), SSL mode enforce, parameter waktu *statement timeout* (mencegah query lambat menggantung server), dan zona waktu UTC.
+
+#### 2. 🚀 Platform Tools (`Replication`, `Backups`, `Migrations`)
+- **`Replication` [NEW]**: Replikasi data real-time ke database cadangan atau sinkronisasi data lake.
+- **`Backups`**:
+  - *Free Tier*: Backup manual via ekspor SQL / Supabase CLI.
+  - *Pro Tier 🔒*: Backup harian otomatis dengan retensi 7 hari + Point-in-Time Recovery (PITR).
+- **`Migrations`**: Riwayat pencatatan versioning skema database yang dieksekusi melalui Supabase CLI (`supabase migration up`).
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
