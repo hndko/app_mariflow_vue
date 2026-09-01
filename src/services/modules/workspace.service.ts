@@ -214,4 +214,22 @@ export const workspaceService = {
 
     if (error) throw error
   },
+
+  /**
+   * Fetch optimized role-tailored dashboard statistics (RPC single-pass)
+   */
+  async getDashboardStatistics(workspaceId: string, userId: string, timeFilter: string = 'all'): Promise<any> {
+    const { data, error } = await supabase.rpc('get_role_dashboard_statistics', {
+      target_ws_id: workspaceId,
+      target_user_id: userId,
+      time_filter: timeFilter,
+    })
+
+    if (error) {
+      console.warn('[WorkspaceService] RPC get_role_dashboard_statistics failed, fallback to local aggregation:', error)
+      return null
+    }
+
+    return data
+  },
 }

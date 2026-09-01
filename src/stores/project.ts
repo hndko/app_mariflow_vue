@@ -12,6 +12,7 @@ export const useProjectStore = defineStore('project', () => {
   const error = ref<string | null>(null)
 
   const activeProjectsCount = computed(() => projects.value.filter((p) => p.status === 'active').length)
+  const planningProjectsCount = computed(() => projects.value.filter((p) => p.status === 'planning').length)
   const completedProjectsCount = computed(() => projects.value.filter((p) => p.status === 'completed').length)
 
   /**
@@ -187,6 +188,7 @@ export const useProjectStore = defineStore('project', () => {
     loading,
     error,
     activeProjectsCount,
+    planningProjectsCount,
     completedProjectsCount,
     loadProjects,
     createProject,
