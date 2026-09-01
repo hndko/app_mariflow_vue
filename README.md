@@ -1,234 +1,176 @@
-# TailAdmin Vue - Free Vue.js Tailwind CSS Admin Dashboard Template
+# 🌊 MariFlow — Simple Workspace & Task Management SaaS
 
-TailAdmin Vue is a free, open-source admin dashboard template **built on Vue.js**, popular and progressive JavaScript
-framework, and **Tailwind CSS**. This **powerful combination** provides developers with an extensive library of
-essential components, elements, and pages to launch a comprehensive and data-centric back-end, dashboard, or admin panel
-solution for any Vue.js based web projects.
+> Platform SaaS modern untuk manajemen workspace, proyek, tugas Kanban, anggota tim, lampiran file, dan analitik performa berbasis Vue 3 dan Supabase.
 
-![TailAdmin Vue.js Dashboard Preview](./banner.png)
+---
 
-With TailAdmin Vue, you can leverage **Vue.js 3** features such as declarative rendering, component-based architecture,
-Vue Router for routing, and Pinia for state management. It also utilizes the power of Tailwind CSS for rapid UI
-development with its low-level utility classes and responsive design capabilities.
+## 📑 Daftar Isi
 
-## Overview
+- [🎯 Deskripsi Proyek](#-deskripsi-proyek)
+- [✨ Fitur Utama](#-fitur-utama)
+- [🛠️ Tech Stack & Prasyarat](#️-tech-stack--prasyarat)
+- [🚀 Panduan Instalasi](#-panduan-instalasi)
+- [💻 Penggunaan](#-penggunaan)
+- [🗄️ Konfigurasi Database Supabase](#️-konfigurasi-database-supabase)
+- [📐 Standar Komponen UI & Kode](#-standar-komponen-ui--kode)
+- [🤝 Panduan Kontribusi](#-panduan-kontribusi)
+- [📄 Lisensi](#-lisensi)
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+---
 
-- Vue 3.x (Vite)
-- Tailwind CSS 4.x
-- TypeScript
+## 🎯 Deskripsi Proyek
 
-### Quick Links
+**MariFlow** adalah platform SaaS yang dirancang untuk membantu tim kecil dan menengah mengorganisasi alur kerja digital dalam satu ekosistem terpadu. MariFlow menyelesaikan kendala fragmentasi tugas, miskomunikasi tim, dan pelacakan progres proyek yang lambat melalui integrasi antarmuka modern yang cepat dan backend *Serverless Backend-as-a-Service* (BaaS) berbasis **Supabase**.
 
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
+---
 
-### Demos
+## ✨ Fitur Utama
 
-- [Free Version](https://free-vue-demo.tailadmin.com/)
-- [Pro Version](https://vue-demo.tailadmin.com)
+- 🏢 **Multi-Tenant Workspaces**: Pengelolaan multi-workspace dengan isolasi data ketat berbasis *Row Level Security* (RLS).
+- 📌 **Papan Tugas Kanban Interaktif**: Pembaruan status tugas secara *drag-and-drop* dengan kartu informatif (prioritas, tenggat waktu, assignee).
+- 📁 **Manajemen Proyek**: Pelacakan status perencanaan, aktif, selesai, dan arsip proyek dengan filter terpadu.
+- 👥 **Kolaborasi Tim & Multi-Role**: Manajemen hak akses berjenjang (*Owner*, *Admin*, *Member*, *Viewer*) serta modal undang anggota via email.
+- 💬 **Komentar & Threading**: Diskusi kontekstual pada setiap kartu tugas secara realtime.
+- 📎 **Drag & Drop File Attachments**: Unggah lampiran tugas dan foto profil ke *Supabase Storage* dengan visual list dan preview instan di bawah form.
+- 🔔 **Pusat Notifikasi Realtime**: Notifikasi in-app otomatis saat ditugaskan atau menerima komentar baru.
+- 📊 **Dashboard Analytics**: Agregasi KPI instan dan visualisasi grafik interaktif (*ApexCharts*) berbasis *PostgreSQL RPC*.
+- 🧪 **Supabase Educational Lab**: Dokumentasi interaktif end-to-end untuk mempelajari arsitektur Supabase.
 
-### Other Versions
+---
 
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [React Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
+## 🛠️ Tech Stack & Prasyarat
 
-## Installation
+Sebelum menjalankan proyek ini di komputer lokal, pastikan perangkat Anda telah memenuhi prasyarat minimum berikut:
 
-### Prerequisites
+### Prasyarat Sistem
+- **Node.js**: Versi `18.x` atau lebih baru (direkomendasikan `20.x` / `22.x LTS`)
+- **npm**: Versi `9.x` atau lebih baru (atau `pnpm` / `yarn`)
+- **Git**: Versi `2.x`
+- **Akun Supabase**: [Supabase Cloud](https://supabase.com) atau instance lokal via Supabase CLI
 
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
+### Teknologi Utama
+- **Frontend Framework**: [Vue.js 3](https://vuejs.org/) (Composition API `<script setup>`)
+- **Build Tool**: [Vite 6](https://vite.dev/)
+- **Styling & Design Language**: [Tailwind CSS 4](https://tailwindcss.com/) & [TailAdmin](https://tailadmin.com/)
+- **State Management**: [Pinia](https://pinia.vuejs.org/)
+- **Client Routing**: [Vue Router 4](https://router.vuejs.org/)
+- **Backend & Database**: [Supabase](https://supabase.com/) (PostgreSQL 15+, Supabase Auth, Storage, Realtime, RLS)
 
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
-- Recommended IDE Setup: [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+---
 
-#### Type Support for `.vue` Imports in TS
+## 🚀 Panduan Instalasi
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+Ikuti langkah-langkah berikut untuk memasang proyek dari terminal:
 
-### Cloning the Repository
-
-Clone the repository using the following command:
-
+### 1. Klon Repositori
 ```bash
-git clone https://github.com/TailAdmin/vue-tailwind-admin-dashboard.git
+git clone https://github.com/hndko/app_mariflow_vue.git
+cd app_mariflow_vue
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+### 2. Pasang Dependensi Proyek
+```bash
+npm install
+```
 
-1. Install dependencies:
+### 3. Konfigurasi Environment Variable
+Salin file `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Buka file `.env` dan masukkan kredensial Supabase Anda:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+> [!CAUTION]
+> **Dilarang keras** memasukkan `SUPABASE_SERVICE_ROLE_KEY` ke dalam file `.env` frontend atau source code.
 
-2. Start the development server:
+---
 
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+## 💻 Penggunaan
 
-3. Production build:
-   ```bash
-   npm run build
-   # or
-   yarn build
-   ```
+### Menjalankan Development Server
+Jalankan perintah berikut untuk memulai server lokal dengan fitur *Hot Module Replacement* (HMR):
+```bash
+npm run dev
+```
+Buka browser pada alamat: [http://localhost:5173](http://localhost:5173)
 
-## Feature Comparison
+### Menjalankan Pemeriksaan Tipe (Type-Check)
+```bash
+npm run type-check
+```
 
-### Free Version
+### Kompilasi untuk Lingkungan Produksi (Build)
+```bash
+npm run build
+```
+Output berkas statis siap rilis akan disimpan pada direktori `dist/`.
 
-- 1 Unique Dashboard
-- 50+ Dashboard UI components
-- Basic Figma design files
-- Community support
+### Menjalankan Pratinjau Build (Preview)
+```bash
+npm run preview
+```
 
-### Pro Version
+### Format & Linter Kode
+```bash
+npm run lint
+npm run format
+```
 
-- 7 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, Stocks (more coming soon)
-- 500+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
+---
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
+## 🗄️ Konfigurasi Database Supabase
 
-## Components
+Untuk menyiapkan database PostgreSQL di instance Supabase Anda:
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using Vue.js and Tailwind CSS. The template includes:
+1. Buka **SQL Editor** pada project Supabase Anda.
+2. Jalankan file migrasi secara berurutan:
+   - `supabase/migrations/20260902_000001_create_mariflow_schema.sql` (Skema tabel, relasi foreign key, indeks, trigger pendaftaran, dan kebijakan RLS)
+   - `supabase/migrations/20260902_000002_dashboard_rpc_functions.sql` (Fungsi RPC statistik dashboard dan trigger activity log)
+3. Buat bucket penyimpanan pada menu **Storage**:
+   - `avatars` (*Public Read*: Ya)
+   - `task-attachments` (*Public Read*: Tidak / Privat)
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Prebuilt profile management and 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+---
 
-All components are built with Vue and styled using Tailwind CSS for easy customization.
+## 📐 Standar Komponen UI & Kode
 
-## Features
+MariFlow menerapkan aturan ketat pada setiap antarmuka pengguna:
+- 🏷️ **Form Input**: Setiap input memiliki *Icon Group* prefix/suffix dan placeholder yang informatif (`BaseInput.vue`, `BaseSelect.vue`).
+- 📥 **Drag & Drop Upload**: Form upload file berkonsep *Drag & Drop* dan **wajib menampilkan daftar hasil upload di bawah form** lengkap dengan preview thumbnail, nama file, ukuran, dan tombol hapus (`BaseDropzone.vue`).
+- 🔘 **Buttons**: Seluruh tombol standar memiliki format **Icon + Text**, sedangkan tombol aksi pada kolom tabel disederhanakan menjadi **Icon-only** dengan tooltip aksesibilitas (`BaseButton.vue`).
+- 🔢 **Penomoran Tabel Otomatis**: Setiap tabel data menyertakan kolom nomor urut otomatis berlabel **`#`** (`BaseTable.vue`).
+- ⚡ **Debouncing**: Pencarian dan filter dilengkapi mekanisme *debounce* (300ms) untuk mencegah beban request berlebih.
 
-**💎 High-quality, Premium Modern Design:**
-A thoughtfully designed dashboard template with a deep focus on UX/UI, already trusted and utilized by over 10K+ web apps worldwide.
+---
 
-**✨ Vue 3:**
-Get enhanced performance with the latest Vue version.
+## 🤝 Panduan Kontribusi
 
-**⚡ Vite Build System:**
-Enjoy quick development with Vite, ensuring fast code compilation.
+Kontribusi dari pengembang terbuka sangat dihargai. Silakan ikuti aturan standar berikut:
 
-**🔀 Vue Router:**
-Manage app navigation with ease using Vue Router for seamless transitions.
+### 1. Buat Branch Baru
+```bash
+git checkout -b feat/nama-fitur-baru
+```
 
-**💡 Reactive Utilities:**
-Enhance component reactivity with @vueuse/core utilities.
+### 2. Gunakan Semantic Commit Messages (Conventional Commits)
+Format wajib: `<type>(<scope>): <description>`
+- `feat(tasks)`: Tambah fitur filter prioritas pada papan Kanban
+- `fix(auth)`: Perbaiki validasi konfirmasi kata sandi
+- `docs(readme)`: Perbarui instruksi instalasi
+- `refactor(services)`: Optimasi query join Supabase
 
-**📊 Charting with ApexCharts:**
-Visualize data with ApexCharts for beautiful analytics.
+### 3. Buat Pull Request (PR)
+- Pastikan `npm run build` dan `npm run type-check` berhasil tanpa pesan error.
+- Buat Pull Request ke branch `main` dengan deskripsi perubahan yang jelas.
 
-**🗺️ Vector Maps with JSVectorMap:**
-Easily integrate interactive vector maps with JSVectorMap.
+---
 
-**🖌️ UI with Tailwind CSS:**
-Frontend UI built on the powerful and versatile Tailwind CSS framework.
+## 📄 Lisensi
 
-**💫 TypeScript Support:**
-Write safer, maintainable code with TailAdmin Vue's TypeScript Support.
+Proyek ini dilisensikan di bawah lisensi **MIT**. Anda bebas menggunakan, memodifikasi, dan mendistribusikan kode ini sesuai dengan ketentuan lisensi.
 
-**✅ Linting and Formatting:**
-Maintain a clean codebase with built-in linting and formatting.
-
-**🗃️ State Management with Pinia:**
-Handle your app's state with Pinia for clean, organized code.
-
-## Update Logs
-
-### Version 2.3.0 - [April 28, 2026]
-- Added **AI Dashboard** with token usage and revenue tracking.
-- Added **Sales Dashboard** with retention and multi-channel analytics.
-- Added **Finance Dashboard** with cashflow and balance management.
-- Introduced **6 New Layout variations** for improved UI flexibility.
-- Integrated **Advanced Data Visualization** with 7+ new chart types.
-
-### Version 2.0.2 - [December 30, 2025]
-
-#### Enhancements
-
-- Added date range picker to Statistics Chart component.
-- Improved responsive design for chart header.
-
-### Version 2.0.1 - [February 27, 2025]
-
-#### Update Overview
-
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
-
-#### Next Steps
-
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
-
-### Version 2.0.0 - [February 2025]
-
-Major update with Vue 3 migration and comprehensive redesign.
-
-#### Major Improvements
-
-- Complete migration to Vue 3 Composition API
-- Updated to Vue Router 4
-- Enhanced user interface with new Vue 3 components
-- Improved performance with Vue 3's virtual DOM
-- Better accessibility and responsive design
-
-#### New Features
-
-- Redesigned dashboards (Ecommerce, Analytics, Marketing, CRM)
-- Collapsible sidebar with Vue 3 integration
-- Enhanced navigation with Vue Router 4
-- Real-time chat functionality
-- Full-featured calendar with drag-and-drop
-- Advanced table components
-- Updated data visualization with ApexCharts
-
-#### Breaking Changes
-
-- Requires Vue 3 and Vue Router 4
-- Chart components migrated to ApexCharts for Vue 3
-- Modified routing implementation
-- Updated component APIs for Vue 3 compatibility
-
-[Read more](https://tailadmin.com/docs/update-logs/vue) on this release.
-
-### Version 1.0.2 - [June 19, 2024]
-
-#### Issues
-
-- Fix Mobile Menu Hamburger Icon issue.
-
-### Version 1.0.1 - [Feb 08, 2024]
-
-#### Enhancements
-
-- Make it functional [Multiselect Dropdown/Form Elements].
-- Delete SelectGroup Components then create a SelectGroup folder and create two files under this
-  folder SelectGroupOne.vue SelectGroupTwo.vue [Select Group/Form Elements & Layout].
-- Update style.css file.
-
-### Version 1.0.0 - Initial Release - [Jan 22, 2024]
-
-- Initial release of TailAdmin Vue.
+Hak Cipta &copy; 2026 **Mari Partner — MariFlow SaaS Team**.
