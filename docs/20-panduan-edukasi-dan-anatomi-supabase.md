@@ -109,6 +109,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [29.2 Parameter Koneksi S3](#292--parameter-koneksi-s3)
     - [29.3 Contoh Penggunaan dengan AWS SDK & Python Boto3](#293--contoh-penggunaan-dengan-aws-sdk--python-boto3)
     - [29.4 Peringatan Keamanan Kritis: S3 Access Keys Bypass RLS!](#294--peringatan-keamanan-kritis-s3-access-keys-bypass-rls)
+30. [Bedah Lengkap Supabase Edge Functions (Deno Runtime, Webhooks, & Secrets)](#-30-bedah-lengkap-supabase-edge-functions-deno-runtime-webhooks--secrets)
+    - [30.1 Apa itu Supabase Edge Functions & Mengapa Memakai Deno?](#301--apa-itu-supabase-edge-functions--mengapa-memakai-deno)
+    - [30.2 3 Cara Pembuatan & Deployment Edge Functions](#302--3-cara-pembuatan--deployment-edge-functions)
+    - [30.3 Manajemen Kunci Rahasia (Edge Function Secrets)](#303--manajemen-kunci-rahasia-edge-function-secrets)
+    - [30.4 Kuota Paket: FREE Tier vs PRO Tier](#304--kuota-paket-free-tier-vs-pro-tier)
 
 ---
 
@@ -1949,7 +1954,101 @@ s3_client.upload_file('laporan.pdf', 'task-attachments', 'laporan_2026.pdf')
 
 ---
 
+## ⚡ 30. Bedah Lengkap Supabase Edge Functions (Deno Runtime, Webhooks, & Secrets)
+
+Menu **Edge Functions** (icon 🌀⚡ pada sidebar utama) adalah layanan *Serverless Computing* terdistribusi global berbasis runtime **Deno** (TypeScript & JavaScript) yang berjalan sedekat mungkin dengan pengguna Anda (*Edge Network*).
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ SUPABASE EDGE FUNCTIONS ARCHITECTURE                                                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚀 3 CARA PEMBUATAN & DEPLOYMENT:                                                                      │
+│  ├─ 1. [<>] Via Editor      : Tulis dan deploy kode Deno TypeScript langsung di browser.               │
+│  ├─ 2. [🤖] Via AI Assistant: Dibuat otomatis oleh asisten AI Supabase berdasarkan prompt.             │
+│  └─ 3. [>_] Via CLI         : $ supabase functions new <nama> ──► $ supabase functions deploy <nama>  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛠️ SKENARIO SAAS UTAMA:                                                                                │
+│  - Payment Webhooks   : Memproses notifikasi Midtrans, Xendit, atau Stripe secara aman.                │
+│  - AI / LLM Gateway   : Memanggil OpenAI / Gemini API tanpa mengekspos API Key ke frontend.            │
+│  - Email Transaksional: Mengirim email laporan berformat custom via Resend API.                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔐 EDGE FUNCTION SECRETS:                                                                              │
+│  - Mengenkripsi API Key sensitif (e.g. STRIPE_SECRET_KEY, OPENAI_API_KEY, RESEND_API_KEY).             │
+│  - Diakses di kode via: Deno.env.get('NAMA_SECRET')                                                    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🟢 FREE TIER BENEFIT:                                                                                  │
+│  - Gratis 500.000 panggilan fungsi (Invocations) setiap bulan!                                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 30.1 ⚡ Apa itu Supabase Edge Functions & Mengapa Memakai Deno?
+
+1. **Runtime Deno Modern**:
+   - Berbeda dengan AWS Lambda standar yang menggunakan Node.js lawas, Edge Functions menggunakan **Deno**, runtime TypeScript modern dengan standar Web API (`fetch`, `Request`, `Response`, `WebSockets`).
+   - Tidak memerlukan folder `node_modules` raksasa karena modul diimpor langsung via URL ESM (`import { serve } from "https://deno.land/std@.../server.ts"`).
+2. **Kecepatan Edge Global (Cold Start Mendekati 0ms)**:
+   - Dijalankan di ratusan *edge server* di seluruh dunia. Waktu startup (*Cold Start*) terjadi dalam hitungan milidetik, jauh lebih cepat daripada serverless container tradisional.
+
+---
+
+### 30.2 🚀 3 Cara Pembuatan & Deployment Edge Functions
+
+Di header dashboard, terdapat menu **`Deploy a new function ▼`**:
+
+#### 1. `<> Via Editor` (Di Dalam Browser)
+- Anda dapat mengetik kode Deno TypeScript langsung di editor dashboard Supabase dan men-deploy-nya secara instan hanya dengan 1 klik.
+
+#### 2. `🤖 Via AI Assistant`
+- Memberikan instruksi bahasa alami: *"Buatkan Edge Function untuk memvalidasi webhook pembayaran Midtrans dan mengupdate status langganan workspace MariFlow ke 'pro'"*, dan AI akan menghasilkan kode Deno lengkap.
+
+#### 3. `>_ Via Supabase CLI` (Standar Praktik Terbaik Developer)
+```bash
+# 1. Buat scaffold fungsi baru
+supabase functions new send-task-notification
+
+# 2. Test fungsi di localhost
+supabase functions serve send-task-notification
+
+# 3. Deploy ke cloud produksi
+supabase functions deploy send-task-notification
+```
+
+---
+
+### 30.3 🔐 Manajemen Kunci Rahasia (*Edge Function Secrets*)
+
+Di sub-menu **Edge Functions ➔ Secrets**, Anda menyimpan kunci rahasia pihak ketiga yang terenkripsi aman:
+
+1. **Parameter**:
+   - `Name`: Nama variabel lingkungan (misal: `MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`, `OPENAI_API_KEY`).
+   - `Value`: Kunci API atau Private Key PEM multi-baris.
+2. **Cara Mengakses di Kode Deno**:
+   ```typescript
+   Deno.serve(async (req) => {
+     const apiKey = Deno.env.get('OPENAI_API_KEY')
+     // Jalankan logika serverless yang aman...
+     return new Response(JSON.stringify({ success: true }), {
+       headers: { 'Content-Type': 'application/json' }
+     })
+   })
+   ```
+
+---
+
+### 30.4 🟢 Kuota Paket: FREE Tier vs PRO Tier
+
+- **Free Tier (Akun MariFlow Saat Ini)**:
+  - **500.000 Invocations per bulan** (100% GRATIS).
+  - Sangat mencukupi untuk menangani webhook pembayaran, pengiriman email, dan integrasi API AI tim kecil.
+- **Pro Tier ($25/bulan) 🔒**:
+  - **2.000.000 Invocations per bulan** + batas memori dan CPU time yang lebih tinggi.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
