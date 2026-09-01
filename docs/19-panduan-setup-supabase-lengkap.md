@@ -246,6 +246,10 @@ Agar fitur pendaftaran, login, dan reset password berfungsi dengan benar di doma
 5. Buka menu **Authentication** ➔ **Providers** ➔ **Email**:
    - Pastikan **Enable Email provider** aktif (*ON*).
    - Jika ingin mempermudah demo tanpa verifikasi email: matikan opsi **Confirm email**.
+6. *(Opsional)* Buka menu **Authentication** ➔ **Passkeys [BETA]**:
+   - Jika ingin mengaktifkan login biometrik (Fingerprint / Face ID), masukkan **Relying Party Origins**: `http://localhost:5173, https://app.mariflow.com`.
+7. **Siklus Token & Keamanan Sesi**:
+   - Di menu **Authentication** ➔ **Sessions**, Access Token default berlaku 3600 detik (1 jam) dan Refresh Token Rotation aktif otomatis untuk mencegah replay attack.
 
 ---
 

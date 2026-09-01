@@ -83,6 +83,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [23.1 Apa itu Third-Party Auth di Supabase?](#231-apa-itu-third-party-auth-di-supabase)
     - [23.2 Bagaimana Cara Kerja Verifikasi JWT Eksternal dengan PostgreSQL RLS?](#232-bagaimana-cara-kerja-verifikasi-jwt-eksternal-dengan-postgresql-rls)
     - [23.3 Rekomendasi untuk MariFlow SaaS](#233--rekomendasi-untuk-mariflow-saas)
+24. [Bedah Lengkap Passkeys, User Sessions, Token Lifecycle, & Auth Rate Limits](#-24-bedah-lengkap-passkeys-user-sessions-token-lifecycle--auth-rate-limits)
+    - [24.1 Passkeys (WebAuthn / Login Biometrik Modern)](#241--passkeys-beta-webauthn--login-biometrik-modern)
+    - [24.2 User Sessions & Siklus Hidup Token JWT (Token Lifecycle)](#242--user-sessions--siklus-hidup-token-jwt-token-lifecycle)
+    - [24.3 Status Sesi: FREE Tier vs PRO Tier](#243--status-sesi-free-tier-vs-pro-tier)
+    - [24.4 Auth Rate Limits (Perlindungan DDoS & Brute-Force)](#244--auth-rate-limits-perlindungan-ddos--brute-force)
 
 ---
 
@@ -1499,7 +1504,88 @@ Namun jika aplikasi Anda sudah memiliki basis pengguna di sistem lain, Supabase 
 
 ---
 
+## 🛡️ 24. Bedah Lengkap Passkeys, User Sessions, Token Lifecycle, & Auth Rate Limits
+
+Menu **Passkeys [BETA]**, **Sessions**, dan **Rate Limits** (kelompok `CONFIGURATION`) mengatur keamanan autentikasi modern tanpa password (*Biometric WebAuthn*), siklus hidup token JWT, dan proteksi dari serangan DDoS brute-force.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🛡️ AUTH SECURITY & LIFECYCLE CONTROLS                                                                  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 PASSKEYS [BETA] (Login Biometrik WebAuthn):                                                         │
+│  - Relying Party ID     : localhost / mariflow.app                                                    │
+│  - Relying Party Origins: http://localhost:5173, https://mariflow.app                                  │
+│  - Dukungan Hardware    : Touch ID (Mac/iOS), Windows Hello, Fingerprint Sensor, YubiKey FIDO2.       │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⏳ SESSIONS & TOKEN LIFECYCLE:                                                                         │
+│  - Access Token Expiry  : 3600 detik (1 Jam) ──► Ditukar otomatis via Refresh Token.                  │
+│  - Refresh Token Security: [🔘 ON] Detect and revoke compromised refresh tokens (Anti Replay Attack).  │
+│  - Reuse Interval       : 10 detik (Toleransi network retry).                                          │
+│  - Enforce Single Session: 🔒 PRO TIER (Mencegah 1 akun dipakai bersamaan di banyak device).          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚦 AUTH RATE LIMITS (Proteksi Brute-Force & Stabilitas Cloud):                                         │
+│  - Sign-up & Sign-in    : 30 request / 5 menit per IP (360 req/jam).                                   │
+│  - Token Refreshes      : 150 request / 5 menit per IP (1800 req/jam).                                 │
+│  - Built-in Email Rate  : 2 email / jam (Naik ke ribuan jika Custom SMTP aktif).                      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 24.1 🔑 Passkeys [BETA] (WebAuthn / Login Biometrik Modern)
+
+Passkeys menggantikan kata sandi tradisional dengan kunci kriptografi publik/privat yang tersimpan di chip keamanan perangkat pengguna:
+
+1. **Komponen Pengaturan**:
+   - `Enable Passkey authentication`: Mengaktifkan registrasi dan login WebAuthn.
+   - `Relying Party Display Name`: Nama aplikasi yang muncul saat pop-up biometrik (misal: `MariFlow SaaS`).
+   - `Relying Party ID`: Domain aplikasi (`localhost` untuk dev, `mariflow.app` untuk production).
+   - `Relying Party Origins`: URL lengkap asal web (`http://localhost:5173`, `https://mariflow.app`).
+2. **Kelebihan untuk MariFlow**:
+   - Pengguna dapat login hanya dengan menempelkan sidik jari (Touch ID / Fingerprint) atau memindai wajah (Face ID / Windows Hello) tanpa perlu mengingat kata sandi.
+
+---
+
+### 24.2 ⏳ User Sessions & Siklus Hidup Token JWT (*Token Lifecycle*)
+
+PostgreSQL RLS dan API Supabase bekerja berdasarkan masa berlaku token JWT:
+
+1. **`Access token expiry time` (`3600 seconds / 1 Jam`)**:
+   - Access Token adalah tiket digital berdurasi pendek (1 jam) yang dibawa frontend Vue di setiap query database.
+   - Durasi pendek menjamin jika token dicuri di jaringan publik, token tersebut akan segera hangus dengan sendirinya.
+2. **`Refresh Tokens & Automatic Renewal`**:
+   - SDK `@supabase/supabase-js` di MariFlow secara otomatis memperbarui Access Token baru di latar belakang menggunakan Refresh Token sebelum masa 1 jam berakhir.
+3. **`Detect and revoke potentially compromised refresh tokens` (🔘 Aktif)**:
+   - Fitur keamanan canggih (*Refresh Token Rotation*). Jika sebuah Refresh Token lama yang sudah pernah dipakai mencoba dipakai ulang oleh penyerang (*Replay Attack*), Supabase akan **langsung membatalkan (*revoke*) seluruh sesi akun tersebut** dan memaksa login ulang demi melindungi user.
+4. **`Refresh token reuse interval` (`10 seconds`)**:
+   - Jeda toleransi waktu singkat untuk menangani kondisi jaringan seluler yang lambat jika request refresh dikirim berulang bersamaan.
+
+---
+
+### 24.3 🔒 Status Sesi: FREE Tier vs PRO Tier
+
+> [!WARNING]
+> **Fitur User Sessions Tertentu Memerlukan PRO TIER 🔒**:
+> - **`Enforce single session per user`**: Memaksa logout otomatis dari perangkat lama saat user login di perangkat baru.
+> - **`Time-box user sessions`** & **`Inactivity timeout`**: Membatasi durasi sesi login maksimal (misal: auto-logout setelah 30 menit tidak aktif).
+> - Fitur kontrol sesi enterprise di atas memerlukan paket **Pro Plan ($25/bulan)**.
+> - Pada **Free Tier**, sesi pengguna tetap aman menggunakan mekanisme standar JWT token refresh (refresh token rotation).
+
+---
+
+### 24.4 🚦 Auth Rate Limits (Perlindungan DDoS & Brute-Force)
+
+Panel **Rate Limits** melindungi aplikasi MariFlow Anda dari serangan bot otomatis:
+
+- **`Sign-ups & Sign-ins` (`30 req / 5 menit`)**: Mencegah bot menebak kata sandi ribuan kali per detik. Jika batas terlampaui, Supabase akan mengembalikan pesan error `429 Too Many Requests`.
+- **`Token refreshes` (`150 req / 5 menit`)**: Memastikan refresh token berjalan lancar untuk banyak tab browser bersamaan.
+- **`Enable IP address forwarding`**:
+  - Diaktifkan jika Anda menempatkan server proxy backend (misal: NGINX / Cloudflare) di depan Supabase agar rate limit dihitung berdasarkan IP asli pengguna (*Client IP*), bukan IP server proxy.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
