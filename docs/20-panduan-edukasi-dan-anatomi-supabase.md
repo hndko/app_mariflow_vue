@@ -12,23 +12,26 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
    - [2.3 Team & Platform Access Control (RBAC)](#23-team--platform-access-control-rbac)
    - [2.4 Single Sign-On (SSO) Enterprise](#24-single-sign-on-sso-enterprise)
    - [2.5 Integrasi Eksternal (GitHub & Vercel)](#25-integrasi-eksternal-github--vercel)
-3. [Anatomi Menu Organisasi — Bagian 2 (Organization Settings & Compliance)](#-3-anatomi-menu-organisasi--bagian-2-organization-settings)
+3. [Anatomi Menu Organisasi — Bagian 2 (Configuration, Security & OAuth)](#-3-anatomi-menu-organisasi--bagian-2)
    - [3.1 Data Privacy & Supabase AI Opt-in Level](#31-data-privacy--supabase-ai-opt-in-level)
    - [3.2 Organization Security & MFA Enforcement](#32-organization-security--mfa-enforcement)
    - [3.3 SSO Configuration & Domain Access Control](#33-sso-configuration--domain-access-control)
    - [3.4 OAuth Apps (Published & Authorized Apps)](#34-oauth-apps-published--authorized-apps)
-   - [3.5 Compliance: Audit Logs, Drains, & Legal Documents](#35-compliance-audit-logs-drains--legal-documents)
-4. [Rekomendasi Konfigurasi Khusus untuk Project MariFlow SaaS](#-4-rekomendasi-konfigurasi-khusus-untuk-project-mariflow-saas)
-5. [Anatomi Menu Tingkat Project (Backend & Database Engine)](#-5-anatomi-menu-tingkat-project)
-   - [5.1 Table Editor](#51-table-editor-gui-database)
-   - [5.2 SQL Editor](#52-sql-editor-eksekusi-query--migrasi)
-   - [5.3 Database & PostgreSQL Schemas](#53-database-schema-triggers--functions)
-   - [5.4 Row Level Security (RLS) Policies](#54-row-level-security-rls-policies)
-   - [5.5 Authentication & URL Configuration](#55-authentication-providers--redirect-urls)
-   - [5.6 Storage Buckets](#56-storage-buckets-file-management)
-   - [5.7 Edge Functions & Realtime](#57-edge-functions--realtime-engine)
-   - [5.8 Project Settings & API Keys (Anon vs Service Role)](#58-project-settings--api-keys)
-6. [Perbedaan Mendasar: Platform RBAC vs Application Multi-Tenant RBAC](#-6-perbedaan-mendasar-platform-rbac-vs-application-rbac)
+4. [Anatomi Menu Organisasi — Bagian 3 (Compliance, Legal & Usage Metrics)](#-4-anatomi-menu-organisasi--bagian-3)
+   - [4.1 Compliance: Audit Log Drains & Legal Documents (DPA, TIA, SOC2, HIPAA)](#41-compliance-audit-log-drains--legal-documents)
+   - [4.2 Usage Dashboard: Analisis 10 Metrik Kuota Realtime](#42-usage-dashboard-analisis-10-metrik-kuota-realtime)
+   - [4.3 Egress Breakdown & Penghematan Bandwidth](#43-egress-breakdown--penghematan-bandwidth)
+5. [Rekomendasi Konfigurasi & Optimasi Kode untuk MariFlow SaaS](#-5-rekomendasi-konfigurasi--optimasi-kode-untuk-mariflow-saas)
+6. [Anatomi Menu Tingkat Project (Backend & Database Engine)](#-6-anatomi-menu-tingkat-project)
+   - [6.1 Table Editor](#61-table-editor-gui-database)
+   - [6.2 SQL Editor](#62-sql-editor-eksekusi-query--migrasi)
+   - [6.3 Database & PostgreSQL Schemas](#63-database-schema-triggers--functions)
+   - [6.4 Row Level Security (RLS) Policies](#64-row-level-security-rls-policies)
+   - [6.5 Authentication & URL Configuration](#65-authentication-providers--redirect-urls)
+   - [6.6 Storage Buckets](#66-storage-buckets-file-management)
+   - [6.7 Edge Functions & Realtime Engine](#67-edge-functions--realtime-engine)
+   - [6.8 Project Settings & API Keys (Anon vs Service Role)](#68-project-settings--api-keys)
+7. [Perbedaan Mendasar: Platform RBAC vs Application Multi-Tenant RBAC](#-7-perbedaan-mendasar-platform-rbac-vs-application-rbac)
 
 ---
 
@@ -49,7 +52,7 @@ Supabase mengadopsi struktur hirarki bertingkat untuk memisahkan kepemilikan bis
                  │
          ┌───────┴───────────────────────┐
          ▼                               ▼
-  🚀 PROJECT: mariflow-prod       🚀 PROJECT: mariflow-dev
+  🚀 PROJECT: marifin-backend     🚀 PROJECT: mariflow-prod
   (Postgres, Auth, Storage, etc.)
          │
          ▼
@@ -62,12 +65,8 @@ Supabase mengadopsi struktur hirarki bertingkat untuk memisahkan kepemilikan bis
 ## 🖥️ 2. Anatomi Menu Organisasi — Bagian 1
 
 ### 2.1 Projects & Usage Quota Monitoring
-- **Daftar Project**: Menampilkan seluruh instance database aktif (contoh: `marifin-backend` di AWS `ap-northeast-1`).
-- **Indikator Free Plan Usage (Batas Kuota Gratis)**:
-  - **Egress (0 MB / 5 GB)**: Bandwidth transfer data keluar per bulan.
-  - **Database Size (27 MB / 500 MB)**: Total ukuran data dan tabel PostgreSQL.
-  - **Monthly Active Users (0 / 50.000 MAU)**: Kuota pengguna yang login tiap bulan.
-  - **File Storage (0 GB / 1 GB)**: Total kapasitas file lampiran dan avatar.
+- **Daftar Project**: Menampilkan seluruh instance database aktif (contoh: `marifin-backend` di AWS `ap-northeast-1` / Tokyo).
+- **Tombol `+ New project`**: Digunakan saat Anda ingin membuat database baru khusus untuk **MariFlow SaaS**.
 
 ### 2.2 Membuat Organisasi Baru (*Create Organization*)
 - **Name**: Nama wadah (contoh: `Mari Partner`).
@@ -89,55 +88,73 @@ Protokol SAML 2.0 untuk mewajibkan login developer via Google Workspace atau Okt
 
 ---
 
-## ⚙️ 3. Anatomi Menu Organisasi — Bagian 2 (Organization Settings)
-
-Berdasarkan 5 screenshot lanjutan pada menu **Organization Settings**:
+## ⚙️ 3. Anatomi Menu Organisasi — Bagian 2
 
 ### 3.1 Data Privacy & Supabase AI Opt-in Level
-
-Menu ini mengatur sejauh mana **Supabase AI Assistant** (asisten kecerdasan buatan pada SQL Editor) diizinkan membaca struktur data Anda:
-
-| Opsi Level | Penjelasan & Akses AI | Tingkat Privasi Data |
-| :--- | :--- | :---: |
-| 🔘 **Disabled** *(Bawaan)* | AI tidak membaca skema apapun. Respon AI akan bersifat generik dan tidak tahu nama tabel proyek Anda. | 🔒 **Maksimal** |
-| 🟢 **Schema Only** *(Sangat Direkomendasikan)* | AI diizinkan membaca **metadata skema** (nama tabel: `workspaces`, `tasks`, nama kolom, relasi FK), tetapi **TIDAK BISA membaca isi baris data sensitif**. | 💡 **Optimal & Aman** |
-| 🟡 **Schema & Logs** | AI membaca skema dan log query error untuk mendiagnosis masalah teknis secara otomatis. | ⚠️ **Menengah** |
-| 🔴 **Schema, Logs & Database Data** | AI diberi hak akses penuh membaca isi baris tabel database. | 🚨 **Kurang Direkomendasikan** |
-
----
+- **🔘 Disabled**: AI tidak membaca skema tabel Anda sama sekali.
+- **🟢 Schema Only (*Rekomendasi Terbaik*)**: Mengizinkan AI membaca metadata skema (nama tabel, kolom, tipe data) tanpa membaca isi baris data sensitif pengguna.
+- **🟡 Schema & Logs**: AI membaca skema + log query error.
+- **🔴 Schema, Logs & Database Data**: AI membaca seluruh data baris database.
 
 ### 3.2 Organization Security & MFA Enforcement
+Mewajibkan (*enforce*) seluruh developer mengaktifkan Two-Factor Authentication (2FA) saat masuk ke dashboard Supabase (khusus paket Pro ke atas).
 
-- **Fungsi**: Memaksa (*enforce*) seluruh developer di organisasi `Mari Partner` untuk menyalakan autentikasi dua faktor (MFA/2FA) saat login ke Supabase.
-- **Status di Free Plan**: Opsi *Organization-wide enforcement* memerlukan Pro Plan. Namun, setiap individu developer tetap bisa mengaktifkan MFA secara mandiri pada pengaturan profilnya.
-
----
-
-### 3.3 SSO Configuration & Domain Access Control
-
-- **Fungsi**: Membatasi agar hanya email dengan domain resmi perusahaan (contoh: `@maripartner.com`) yang diizinkan login ke organisasi via Identity Provider (SAML 2.0).
-- **Status di Free Plan**: Tersedia pada paket Team Plan ke atas.
+### 3.3 OAuth Apps (Published & Authorized Apps)
+- **Published Apps**: Untuk mempublikasikan integrasi OAuth pihak ketiga buatan Anda.
+- **Authorized Apps**: Daftar aplikasi pihak ketiga (seperti Vercel, Retool, Zapier) yang diizinkan mengakses data Supabase Anda.
 
 ---
 
-### 3.4 OAuth Apps (Published & Authorized Apps)
+## 📜 4. Anatomi Menu Organisasi — Bagian 3 (Compliance, Legal & Usage Metrics)
 
-- **Published Apps**: Digunakan jika Anda ingin membuat aplikasi integrasi pihak ketiga (misalnya ekstensi VS Code atau plugin Raycast) yang meminta izin user Supabase lain via protokol OAuth 2.0.
-- **Authorized Apps**: Daftar aplikasi pihak ketiga (seperti Vercel, Retool, Zapier) yang telah Anda beri wewenang untuk membaca atau mengelola project Supabase Anda.
+Berdasarkan 5 screenshot lanjutan pada menu **Compliance** dan **Usage**:
+
+### 4.1 Compliance: Audit Log Drains & Legal Documents
+
+1. **Audit Log Drains**:
+   - Fitur enterprise (Team Plan) untuk mengekspor rekaman log keamanan platform ke sistem monitoring pihak ketiga seperti Datadog, AWS CloudWatch, Splunk, atau Logflare.
+2. **Data Processing Addendum (DPA)**:
+   - Dokumen perjanjian hukum kepatuhan privasi data antara organisasi Anda dan Supabase. Otomatis berlaku untuk seluruh pengguna gratis maupun berbayar.
+3. **Transfer Impact Assessment (TIA)**:
+   - Dokumen penilaian transfer data internasional yang mematuhi regulasi privasi Eropa (**GDPR**).
+4. **SOC2 Type 2 & ISO 27001**:
+   - Sertifikasi standar keamanan industri internasional tingkat tinggi yang dimiliki oleh pusat data Supabase.
+5. **HIPAA (Health Insurance Portability and Accountability Act)**:
+   - Add-on berbayar khusus untuk aplikasi kesehatan yang memproses data medis pasien di Amerika Serikat.
 
 ---
 
-### 3.5 Compliance: Audit Logs, Drains, & Legal Documents
+### 4.2 Usage Dashboard: Analisis 10 Metrik Kuota Realtime
 
-- **Audit Logs**: Rekaman jejak audit 62 hari mengenai siapa yang membuat/menghapus project, mengubah environment variables, atau mengundang anggota baru (standar kepatuhan SOC2 / HIPAA).
-- **Audit Log Drains**: Fitur untuk mengekspor log keamanan secara real-time ke layanan monitoring eksternal seperti Datadog, Splunk, atau AWS CloudWatch.
-- **Legal Documents**: Surat perjanjian perlindungan data bisnis (Data Processing Addendum / BAA).
+Pada menu **Usage** (`03 Aug 2026 - 03 Sep 2026` di Free Plan):
+
+| Metrik Kuota | Batas Free Plan | Penggunaan Saat Ini | Keterangan untuk Aplikasi MariFlow |
+| :--- | :---: | :---: | :--- |
+| 🗄️ **Database Size** | **500 MB (0.5 GB)** | **27 MB (5%)** | Total ukuran tabel PostgreSQL (`workspaces`, `tasks`, `projects`, `comments`). Cukup untuk jutaan baris data teks! |
+| 🌐 **Egress (Network Out)** | **5 GB** | **0 GB (<1%)** | Total transfer data dari database/storage ke browser pengguna. |
+| ⚡ **Cached Egress** | **5 GB** | **0 GB** | Data yang disajikan melalui CDN cache global Supabase. |
+| 👥 **Monthly Active Users (MAU)** | **50.000 MAU** | **0 MAU** | Jumlah user unik yang login ke MariFlow dalam 1 siklus bulan. |
+| 👥 **Third-Party MAU** | **50.000 MAU** | **0 MAU** | User yang login melalui OAuth (Google, GitHub, Discord). |
+| 📦 **Storage Size** | **1 GB** | **0 GB** | Total ukuran file avatar dan dokumen lampiran tugas kanban. |
+| 📡 **Realtime Peak Connections** | **200 koneksi** | **0** | Maksimal pengguna yang membuka Papan Kanban secara bersamaan dalam 1 detik. |
+| 💬 **Realtime Messages** | **2.000.000 pesan** | **0** | Jumlah event websocket (misal event drag-and-drop pindah kolom kanban). |
+| ⚡ **Edge Function Invocations** | **500.000 panggilan** | **0** | Panggilan fungsi serverless backend Deno. |
+| 🖼️ **Storage Image Transformation** | *Pro Feature* | *Unavailable* | Fitur resize gambar otomatis di CDN Storage (memerlukan Pro). |
 
 ---
 
-## 💡 4. Rekomendasi Konfigurasi Khusus untuk Project MariFlow SaaS
+### 4.3 Egress Breakdown & Penghematan Bandwidth
 
-Berikut adalah pengaturan praktis yang disarankan untuk diterapkan pada project kita:
+- **Egress** mencakup seluruh lalu lintas keluar: Database API, File Storage Download, Realtime WebSocket, Supabase Auth, dan Edge Functions.
+- **Strategi Efisiensi MariFlow**:
+  1. Frontend Vue 3 memilih kolom spesifik (`.select('id, name, status')`) alih-alih `select('*')`.
+  2. Search bar dan filter tanggal menerapkan debounce 300-500ms agar tidak memicu panggilan query berulang saat pengguna mengetik.
+
+---
+
+## 🎯 5. Rekomendasi Konfigurasi & Optimasi Kode untuk MariFlow SaaS
+
+Berikut adalah poin-poin actionable yang dapat diterapkan langsung pada project kita:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -147,20 +164,23 @@ Berikut adalah pengaturan praktis yang disarankan untuk diterapkan pada project 
 │    Manfaat: Supabase AI di SQL Editor bisa langsung menulis query DDL   │
 │    dan agregasi dashboard analytics secara presisi sesuai tabel kita.   │
 │                                                                         │
-│ 2. Integrations ➔ Pasang Vercel Integration                             │
-│    Manfaat: Saat deploy MariFlow ke Vercel, Vercel langsung otomatis    │
-│    mengenali URL dan Anon Key tanpa perlu input manual di dashboard.    │
+│ 2. Storage Upload File Size Limit (Proteksi Kuota 1 GB)                 │
+│    Terapkan batas maksimal ukuran file upload (misal: 10 MB per file)   │
+│    pada komponen BaseDropzone.vue agar kuota 1 GB tidak cepat habis.    │
 │                                                                         │
-│ 3. Application Activity Logs (Built-in)                                 │
-│    Karena Audit Logs platform memerlukan paket Team, MariFlow SaaS      │
-│    telah dilengkapi tabel mandiri `activity_logs` di PostgreSQL yang    │
-│    mencatat audit perubahan status tugas kanban pada Free Plan!         │
+│ 3. Realtime Connection Hygiene (Proteksi Kuota 200 Koneksi)             │
+│    Pastikan seluruh subscription Supabase Realtime di-unsubscribe pada  │
+│    hook onBeforeUnmount() di Vue 3 saat pengguna berpindah halaman.     │
+│                                                                         │
+│ 4. Integrasi Vercel                                                     │
+│    Hubungkan Supabase ke Vercel di menu Integrations untuk auto-sync    │
+│    variabel lingkungan VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY.      │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🗄️ 5. Anatomi Menu Tingkat Project (Di Dalam Database)
+## 🗄️ 6. Anatomi Menu Tingkat Project (Di Dalam Database)
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -177,25 +197,9 @@ Berikut adalah pengaturan praktis yang disarankan untuk diterapkan pada project 
 └─────────────────┴───────────────────────────────────────────────┘
 ```
 
-### 5.1 Table Editor
-Antarmuka visual untuk melihat dan memverifikasi data tabel `workspaces`, `projects`, `tasks`, dan `profiles`.
-
-### 5.2 SQL Editor
-Terminal eksekusi skrip migrasi SQL secara berurutan:
-1. `20260902_000001_create_mariflow_schema.sql`
-2. `20260902_000002_seed_demo_data.sql`
-3. `20260902_000003_role_dashboard_analytics.sql`
-
-### 5.3 Database & RLS
-- **RLS (Row Level Security)**: Wajib aktif di seluruh tabel untuk mengisolasi data antar-workspace secara multi-tenant.
-
-### 5.4 Storage Buckets
-- `avatars` (Public): Foto profil pengguna.
-- `task-attachments` (Public): Berkas dokumen/gambar tugas tim.
-
 ---
 
-## ⚖️ 6. Perbedaan Mendasar: Platform RBAC vs Application RBAC
+## ⚖️ 7. Perbedaan Mendasar: Platform RBAC vs Application RBAC
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
