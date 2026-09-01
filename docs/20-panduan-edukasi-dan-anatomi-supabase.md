@@ -144,6 +144,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [36.2 Database Branching: FREE Tier vs PRO Tier](#362--database-branching-free-tier-vs-pro-tier)
     - [36.3 Vercel Integration (Auto Environment Sync)](#363--vercel-integration-auto-environment-sync)
     - [36.4 AWS PrivateLink (Team & Enterprise Plans)](#364--aws-privatelink-team--enterprise-plans-)
+37. [Bedah Lengkap API Keys, JWT Signing Keys (ECC P-256), & Log Drains](#-37-bedah-lengkap-api-keys-jwt-signing-keys-ecc-p-256--log-drains)
+    - [37.1 Evolusi API Keys: Modern Keys vs Legacy Keys](#371--evolusi-api-keys-modern-keys-vs-legacy-keys)
+    - [37.2 Modernisasi JWT Keys: Kriptografi Asimetris ECC (P-256)](#372--modernisasi-jwt-keys-kriptografi-asimetris-ecc-p-256)
+    - [37.3 Log Drains: Streaming Log Real-Time (PRO TIER ADD-ON)](#373--log-drains-streaming-log-real-time--pro-tier-add-on)
 
 ---
 
@@ -2538,7 +2542,79 @@ Dengan menghubungkan repository **`hndko/app_mariflow_vue`** ke Supabase:
 
 ---
 
+## 🔑🔐 37. Bedah Lengkap API Keys, JWT Signing Keys (ECC P-256), & Log Drains
+
+Sub-menu **API Keys**, **JWT Keys**, dan **Log Drains** (di bawah kelompok `Settings ➔ CONFIGURATION`) adalah fondasi pengamanan gateway API, enkripsi token sesi pengguna, dan pipa pengaliran log analitik di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🔑🔐 API KEYS, JWT CRYPTOGRAPHY & LOG DRAINS ARCHITECTURE                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 1. EVOLUSI API KEYS (Modern vs Legacy):                                                             │
+│  ├─ Modern Keys (sb_publishable_... & sb_secret_...) : Format kunci baru yang lebih aman & modular.     │
+│  └─ Legacy Keys (anon public & service_role secret)  : Format berbasis token JWT HS256 klasik.         │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛡️ 2. JWT SIGNING KEYS (Asymmetric ECC P-256 vs Symmetric HS256):                                     │
+│  - Current Key : ECC (P-256) (Kriptografi kurva elips asimetris standar industri modern).              │
+│  - Fitur Kunci : Standby Key & Zero-Downtime Key Rotation (Rotasi kunci tanpa memutus sesi user aktif).│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🪵 3. LOG DRAINS [🔒 PRO TIER ADD-ON ($60/bulan)]:                                                     │
+│  - Mengalirkan stream seluruh log database, auth, storage, dan fungsi ke Datadog, Loki, atau Sentry.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 37.1 🔑 Evolusi API Keys: Modern Keys vs Legacy Keys
+
+Di tab **Settings ➔ API Keys**:
+
+#### 1. Format Baru: `Publishable Key` & `Secret Key`
+- **`Publishable Key` (`sb_publishable_...`)**:
+  - Kunci publik yang aman disematkan di frontend browser Vue.js.
+  - Akses data yang diminta melalui kunci ini **wajib disaring oleh PostgreSQL Row Level Security (RLS)**.
+- **`Secret Key` (`sb_secret_...`)**:
+  - Kunci administratif server-side yang memiliki wewenang bypass RLS (*Superuser level*).
+  - Hanya boleh digunakan di server backend terisolasi atau Supabase Edge Functions.
+
+#### 2. Format Lama: `Legacy anon` & `service_role`
+- Format token JWT berbasis string `eyJhbGciOiJIUzI1Ni...`.
+- Supabase menyediakan tombol **`Disable legacy API keys`** jika seluruh aplikasi sudah bermigrasi ke format publishable key baru.
+
+---
+
+### 37.2 🛡️ Modernisasi JWT Keys: Kriptografi Asimetris `ECC (P-256)`
+
+Di tab **Settings ➔ JWT Keys**:
+
+1. **Mengapa Berpindah dari `HS256` ke `ECC (P-256)`?**:
+   - **Legacy HS256 (Symmetric)**: Server otentikasi dan server pemverifikasi harus berbagi satu *secret string* yang sama persis. Jika rahasia ini bocor, penyerang bisa memalsukan token JWT apa saja.
+   - **Modern ECC P-256 (Asymmetric)**: Supabase menandatangani token menggunakan *Private Key*, sedangkan aplikasi luar/gateway cukup memverifikasi keaslian token menggunakan *Public Key (JWKS)* tanpa perlu mengetahui kunci rahasianya!
+2. **`Create Standby Key` (Rotasi Kunci Zero-Downtime)**:
+   - Anda dapat membuat *Standby Key* baru terlebih dahulu.
+   - Setelah semua layanan membaca kunci baru, Anda tinggal mengaktifkannya (*Promote*) dan mencabut (*Revoke*) kunci lama tanpa menyebabkan jutaan pengguna aktif ter-logout secara mendadak.
+
+---
+
+### 37.3 🪵 Log Drains: Streaming Log Real-Time (🔒 PRO TIER ADD-ON)
+
+Di tab **Settings ➔ Log Drains**:
+
+- **Fungsi Log Drains**:
+  - Mengalirkan seluruh log mentah (*Postgres queries, API requests, Auth logs, Edge Function execution logs*) ke platform observabilitas pihak ketiga seperti:
+    - **Datadog**
+    - **Grafana Loki**
+    - **Sentry**
+    - **Custom HTTP Webhook Endpoint**
+- **Ketentuan Biaya**:
+  - Fitur berbayar (*Add-On*) seharga **$60/bulan per drain** untuk pengguna Pro Plan ke atas.
+- **Kondisi di Free Tier**:
+  - Pengguna Free Tier tetap dapat melihat dan mencari riwayat log secara gratis hingga beberapa hari ke belakang langsung dari menu **Logs Explorer** di dashboard Supabase.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
