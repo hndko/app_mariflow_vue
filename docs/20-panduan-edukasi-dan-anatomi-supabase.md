@@ -66,6 +66,10 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [19.1 Database Backups: Scheduled, PITR, & Strategi Backup Free Tier](#191--database-backups-scheduled-pitr--strategi-backup-free-tier)
     - [19.2 Panduan Backup Manual 100% Gratis untuk MariFlow di FREE Tier](#192--panduan-backup-manual-100-gratis-untuk-mariflow-di-free-tier)
     - [19.3 Database Migrations: Mengelola Skema via Supabase CLI](#193--database-migrations-mengelola-skema-via-supabase-cli)
+20. [Bedah Lengkap Menu Authentication (User Directory, Invitation, & OAuth 2.0 Server)](#-20-bedah-lengkap-menu-authentication-user-directory-invitation--oauth-20-server)
+    - [20.1 Direktori Pengguna (Authentication Users)](#201--direktori-pengguna-authentication--users)
+    - [20.2 Anatomi Opsi Pembuatan Akun: Create User vs Send Invitation](#202--anatomi-opsi-pembuatan-akun-create-user-vs-send-invitation)
+    - [20.3 OAuth Apps & OAuth 2.0 Server](#203--oauth-apps--oauth-20-server-beta)
 
 ---
 
@@ -1186,7 +1190,85 @@ Menu **Database ➔ Migrations** mencatat riwayat versioning perubahan struktur 
 
 ---
 
+## 👤🔒 20. Bedah Lengkap Menu Authentication (User Directory, Invitation, & OAuth 2.0 Server)
+
+Menu **Authentication** (icon 👤🔒 pada sidebar utama) adalah pusat manajemen identitas, otorisasi token JWT, dan penyedia otentikasi multi-provider di Supabase.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 👤🔒 Authentication (Identity & Access Management)                                                     │
+├──────────────────────────┬─────────────────────────────────────────────────────────────────────────────┤
+│ 📂 MANAGE:               │                                                                             │
+│  - Users                 │  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  - OAuth Apps            │  │ 👥 USERS DIRECTORY:                                                   │  │
+│                          │  │  [🔍 Search by email...] [All columns ▼]          [+ Add user ▼]      │  │
+│ 🔔 NOTIFICATIONS:        │  │  ├─ Send invitation  (Kirim link undangan ajaib via email)            │  │
+│  - Emails                │  │  └─ Create new user  (Buat akun manual + Auto confirm user)           │  │
+│                          │  └───────────────────────────────────────────────────────────────────────┘  │
+│ ⚙️ CONFIGURATION:        │                                                                             │
+│  - Policies ↗            │  🔑 OAUTH 2.0 SERVER [BETA]:                                                │
+│  - Sign In / Providers   │  - Menjadikan MariFlow sebagai Identity Provider ("Sign in with MariFlow") │
+│  - Passkeys [BETA]       │  - Base Site URL     : http://localhost:3000                                │
+│  - OAuth Server [BETA]   │  - Authorization Path: /oauth/consent (Halaman persetujuan izin pengguna)  │
+│  - Sessions & Rate Limits│                                                                             │
+│  - Multi-Factor (MFA)    │  🛡️ ADVANCED AUTH CONTROLS:                                                 │
+│  - URL Configuration     │  - Rate Limits, Multi-Factor MFA (TOTP), Auth Hooks, Audit Logs.          │
+│  - Attack Protection     │                                                                             │
+└──────────────────────────┴─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 20.1 👥 Direktori Pengguna (`Authentication ➔ Users`)
+
+Panel **Users** menampilkan seluruh akun yang terdaftar di dalam skema `auth.users`:
+
+1. **Kolom Data Utama**:
+   - `UID`: UUID v4 unik identitas pengguna global yang menjadi referensi `auth.uid()`.
+   - `Display name` & `Email`: Alamat email dan nama tampilan pengguna.
+   - `Phone`: Nomor telepon (jika menggunakan SMS Auth OTP).
+   - `Provider`: Metode login akun (`email`, `google`, `github`, dll).
+   - `Provider type`: Tipe penyedia identitas.
+2. **Keterkaitannya dengan MariFlow**:
+   - Setiap kali ada user baru mendaftar di `auth.users`, database trigger otomatis menduplikasi datanya ke tabel aplikasi **`public.profiles`** agar data non-kredensial (seperti nama lengkap, avatar URL, dan bio) dapat diakses aman oleh anggota tim lain.
+
+---
+
+### 20.2 ➕ Anatomi Opsi Pembuatan Akun: `Create User` vs `Send Invitation`
+
+Di tombol **`Add user ▼`** pada kanan atas, terdapat dua opsi:
+
+#### 1. `Create new user` (Shortcut: `I then U`)
+- **Field**:
+  - `Email address`: Email pengguna (misal: `superadmin@example.com`).
+  - `User Password`: Kata sandi akun awal.
+  - `Auto confirm user?` (☑️ Tercentang secara default):
+    - **Manfaat**: Email pengguna langsung berstatus *Confirmed* seketika tanpa perlu mengirimkan tautan verifikasi email konfirmasi. Sangat ideal untuk tim developer saat membuat akun admin/demo pertama kali.
+
+#### 2. `Send invitation` (Shortcut: `I then I`)
+- **Field**: `User email`.
+- **Manfaat**: Supabase akan mengirimkan email undangan berisi *Magic Link*. Ketika penerima mengklik link tersebut, mereka akan diarahkan ke halaman aplikasi MariFlow untuk mengatur kata sandi mereka sendiri.
+
+---
+
+### 20.3 🔑 OAuth Apps & OAuth 2.0 Server [BETA]
+
+Menu **OAuth Apps** dan **OAuth Server** adalah fitur generasi baru Supabase untuk ekosistem integrasi aplikasi pihak ketiga:
+
+1. **Apa itu OAuth Server di Supabase?**:
+   - Fitur ini memungkinkan aplikasi **MariFlow Anda bertindak sebagai Identity Provider (IdP)**.
+   - Aplikasi pihak ketiga (misal: plugin Figma, ekstensi VS Code, atau aplikasi mobile pihak ketiga) dapat menampilkan tombol **"Log in with MariFlow"**.
+2. **Anatomi Konfigurasi OAuth Server**:
+   - `Enable the Supabase OAuth Server`: Mengaktifkan server otorisasi OAuth 2.0.
+   - `Site URL`: URL dasar aplikasi MariFlow (`http://localhost:3000` atau domain produksi `https://mariflow.app`).
+   - `Authorization Path` (`/oauth/consent`):
+     - Rute halaman di frontend Vue tempat pengguna melihat dialog persetujuan: *"Aplikasi X ingin mengakses tugas dan profil Anda. Izinkan atau Tolak?"*.
+   - `Allow Dynamic OAuth Apps`: Mengizinkan pendaftaran klien OAuth baru secara terprogram melalui REST API.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
