@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!user.value)
+  const isSuperadmin = computed(() => !!profile.value?.is_superadmin)
   const userName = computed(() => profile.value?.full_name || user.value?.user_metadata?.full_name || user.value?.email?.split('@')[0] || 'User')
   const userAvatar = computed(() => profile.value?.avatar_url || '/images/user/user-01.jpg')
   const userEmail = computed(() => user.value?.email || '')
@@ -161,6 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     isAuthenticated,
+    isSuperadmin,
     userName,
     userAvatar,
     userEmail,

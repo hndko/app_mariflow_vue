@@ -11,6 +11,7 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   email: string
+  is_superadmin?: boolean
   created_at: string
   updated_at: string
 }
@@ -138,3 +139,35 @@ export interface DashboardStats {
   tasks_by_status: Record<TaskStatus, number>
   tasks_by_priority: Record<TaskPriority, number>
 }
+
+export interface SuperadminSaaSMetrics {
+  total_workspaces: number
+  total_users: number
+  total_superadmins: number
+  total_projects: number
+  total_tasks: number
+  total_completed_tasks: number
+  total_comments: number
+  total_attachments: number
+  recent_workspaces: Array<{
+    id: string
+    name: string
+    slug: string
+    created_at: string
+    owner_name: string | null
+    owner_email: string | null
+    owner_avatar: string | null
+    projects_count: number
+    members_count: number
+  }>
+  recent_users: Array<{
+    id: string
+    email: string
+    full_name: string | null
+    avatar_url: string | null
+    is_superadmin: boolean
+    created_at: string
+    workspaces_count: number
+  }>
+}
+
