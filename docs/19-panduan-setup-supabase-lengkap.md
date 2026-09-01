@@ -325,6 +325,7 @@ Proyek MariFlow telah dilengkapi file [vercel.json](file:///d:/laragon/www/app_m
 | Komponen | Status Standar | Keterangan |
 | :--- | :---: | :--- |
 | **Row Level Security (RLS)** | ✅ **Wajib ON** | Aktif di seluruh 10 tabel (`profiles`, `workspaces`, `workspace_members`, `projects`, `tasks`, `task_assignees`, `task_comments`, `task_attachments`, `notifications`, `activity_logs`). |
+| **Security Advisor (Splinter)**| ✅ **0 Errors** | Jalankan *Rerun linter* di menu **Advisors ➔ Security Advisor** untuk memastikan tidak ada celah izin atau tabel tanpa RLS. |
 | **Kunci Anonim (`VITE_SUPABASE_ANON_KEY`)** | ✅ **Aman** | Kunci publik yang dibatasi sepenuhnya oleh kebijakan RLS database. |
 | **Kunci Layanan (`SUPABASE_SERVICE_ROLE_KEY`)** | 🔒 **Dilarang di Frontend** | Tidak boleh pernah dimasukkan ke file `.env` frontend atau di-commit ke Git. |
 | **Unsubscribe Realtime** | ✅ **Hygiene** | Seluruh subscription realtime di-unsubscribe pada hook `onBeforeUnmount()` di komponen Vue. |

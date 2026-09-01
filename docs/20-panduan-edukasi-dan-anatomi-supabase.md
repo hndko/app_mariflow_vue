@@ -120,6 +120,9 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [31.3 Realtime Authorization & RLS Policies (realtime.messages)](#313--realtime-authorization--rls-policies-realtimemessages)
     - [31.4 Realtime Settings: FREE Tier vs PRO Tier](#314--realtime-settings-free-tier-vs-pro-tier)
     - [31.5 Higienitas Subscription di Vue 3 (Anti-Memory Leak)](#315--higienitas-subscription-di-vue-3-anti-memory-leak)
+32. [Bedah Lengkap Security Advisor & Postgres Linter (Splinter Engine & RLS Auditing)](#-32-bedah-lengkap-security-advisor--postgres-linter-splinter-engine--rls-auditing)
+    - [32.1 3 Kategori Temuan Splinter Linter](#321--3-kategori-temuan-splinter-linter)
+    - [32.2 Bedah Kasus: Mengapa Muncul 2 Warnings pada public.rls_auto_enable()?](#322--bedah-kasus-mengapa-muncul-2-warnings-pada-publicrls_auto_enable)
 
 ---
 
@@ -2154,7 +2157,68 @@ Di tab **Realtime ➔ Settings**:
 
 ---
 
+## 🛡️💡 32. Bedah Lengkap Security Advisor & Postgres Linter (Splinter Engine & RLS Auditing)
+
+Menu **Advisors ➔ Security Advisor** (icon 💡 pada sidebar utama) adalah sistem pemindaian kerentanan database otomatis yang ditenagai oleh **Splinter (Supabase Postgres LINTER)**.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🛡️💡 SECURITY ADVISOR & SPLINTER LINTER ARCHITECTURE                                                  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🚥 3 KATEGORI TEMUAN KEAMANAN:                                                                         │
+│  ├─ 🚩 [Errors]   : Masalah Kritis (Tabel publik tanpa RLS, Policy USING true pada data sensitif).   │
+│  ├─ ⚠️ [Warnings] : Potensi Risiko Izin (Fungsi SECURITY DEFINER dapat dipanggil publik/authenticated).│
+│  └─ ℹ️ [Info]     : Saran Optimasi Struktur & Best Practice Keamanan Tambahan.                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔍 ANALISIS TEMUAN MARIFLOW DEV (Status Saat Ini):                                                     │
+│  - 🚩 Errors   : 0 Errors (Sempurna! Seluruh 10 tabel MariFlow terproteksi RLS 100%).                 │
+│  - ⚠️ Warnings : 2 Warnings pada fungsi 'public.rls_auto_enable()'                                     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛠️ CARA RESOLUSI WARNING 'Public/Signed-In Can Execute SECURITY DEFINER Function':                    │
+│  - Masalah : Fungsi trigger superuser otomatis dapat dipanggil oleh user biasa via API.               │
+│  - Solusi  : Cabut izin eksekusi dari role publik via 'REVOKE EXECUTE ON FUNCTION ...'                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 32.1 🚥 3 Kategori Temuan Splinter Linter
+
+1. **🚩 `Errors` (Kerentanan Kritis)**:
+   - Pelanggaran fatal yang dapat menyebabkan kebocoran data (misal: ada tabel baru yang lupa dinyalakan RLS-nya atau tabel profil yang tidak memiliki SELECT policy).
+   - **Hasil Audit MariFlow**: **`0 Errors`** (Semua tabel kita telah terlindungi RLS secara sempurna).
+2. **⚠️ `Warnings` (Peringatan Risiko Hak Akses)**:
+   - Kondisi di mana kode SQL berjalan dengan baik, tetapi memberikan izin (*privileges*) yang lebih luas daripada yang seharusnya dibutuhkan.
+3. **ℹ️ `Info / Suggestions` (Saran Rekomendasi)**:
+   - Tips peningkatan struktur basis data dan efisiensi query.
+
+---
+
+### 32.2 🔍 Bedah Kasus: Mengapa Muncul 2 Warnings pada `public.rls_auto_enable()`?
+
+Pada tangkapan layar, Splinter mendeteksi:
+1. `Public Can Execute SECURITY DEFINER Function` ➔ `public.rls_auto_enable()`
+2. `Signed-In Users Can Execute SECURITY DEFINER Function` ➔ `public.rls_auto_enable()`
+
+#### Penjelasan Teknis:
+- Fungsi `public.rls_auto_enable()` dibuat dengan modifier **`SECURITY DEFINER`**, yang artinya fungsi ini berjalan menggunakan hak akses penuh superuser (`postgres`).
+- Secara bawaan di PostgreSQL, setiap fungsi baru di skema `public` secara otomatis dapat dipanggil (*callable*) oleh siapapun (role `anon` publik dan role `authenticated`).
+- Meskipun fungsi ini hanya sebuah trigger, membiarkan fungsi `SECURITY DEFINER` terbuka untuk dieksekusi langsung oleh klien PostgREST adalah sebuah celah risiko potensial.
+
+#### Solusi Perbaikan (*Best Practice SQL Fix*):
+Jalankan query berikut di **SQL Editor** untuk mencabut izin eksekusi publik:
+
+```sql
+-- Cabut izin eksekusi dari publik dan user biasa, sisakan hanya untuk superuser dan database trigger:
+REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+```
+
+Setelah query di atas dieksekusi, klik tombol **`Rerun linter`** di dashboard Security Advisor, dan status Warnings akan berubah menjadi **`0 Warnings`**!
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
