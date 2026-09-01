@@ -88,6 +88,14 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
     - [24.2 User Sessions & Siklus Hidup Token JWT (Token Lifecycle)](#242--user-sessions--siklus-hidup-token-jwt-token-lifecycle)
     - [24.3 Status Sesi: FREE Tier vs PRO Tier](#243--status-sesi-free-tier-vs-pro-tier)
     - [24.4 Auth Rate Limits (Perlindungan DDoS & Brute-Force)](#244--auth-rate-limits-perlindungan-ddos--brute-force)
+25. [Bedah Lengkap Multi-Factor (MFA), URL Configuration, & Attack Protection](#-25-bedah-lengkap-multi-factor-mfa-url-configuration--attack-protection)
+    - [25.1 Multi-Factor Authentication (MFA / 2FA)](#251--multi-factor-authentication-mfa--2fa)
+    - [25.2 URL Configuration (Mencegah Serangan Open Redirect)](#252--url-configuration-mencegah-serangan-open-redirect)
+    - [25.3 Attack Protection (Bot Captcha & Leaked Passwords)](#253--attack-protection-bot-captcha--leaked-passwords)
+26. [Bedah Lengkap Auth Hooks, Audit Logs, & Auth Performance Tuning](#-26-bedah-lengkap-auth-hooks-audit-logs--auth-performance-tuning)
+    - [26.1 Auth Hooks (Intersepsi Alur Otentikasi dengan Postgres & Edge Functions)](#261--auth-hooks-beta-intersepsi-alur-otentikasi-dengan-postgres--edge-functions)
+    - [26.2 Audit Logs (audit_log_entries)](#262--audit-logs-audit_log_entries)
+    - [26.3 Auth Performance Tuning (FREE Tier vs PRO Tier)](#263--auth-performance-tuning-free-tier-vs-pro-tier)
 
 ---
 
@@ -1584,7 +1592,148 @@ Panel **Rate Limits** melindungi aplikasi MariFlow Anda dari serangan bot otomat
 
 ---
 
+## 🔐 25. Bedah Lengkap Multi-Factor (MFA), URL Configuration, & Attack Protection
+
+Menu **Multi-Factor**, **URL Configuration**, dan **Attack Protection** (kelompok `CONFIGURATION`) menangani autentikasi dua faktor (2FA TOTP), keamanan pengalihan URL pasca-login (*Open Redirect Whitelist*), dan perlindungan dari bot serangan kata sandi bocor.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🔐 MULTI-FACTOR, URL CONFIGURATION, & ATTACK PROTECTION                                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📱 MULTI-FACTOR AUTHENTICATION (MFA / 2FA):                                                             │
+│  ├─ [🟢 Enabled] TOTP (Google/Apple Authenticator) ──► Standar RFC 6238 (100% GRATIS di Free Tier).    │
+│  ├─ [🔒 PRO TIER] SMS MFA                          ──► OTP via SMS Twilio/MessageBird.                │
+│  └─ [Enhanced Security] Limit duration of AAL1     ──► Batasi sesi ke 15 menit jika belum verifikasi. │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 URL CONFIGURATION (Redirect Whitelisting):                                                         │
+│  - Site URL     : Fallback default URL aplikasi (http://localhost:5173 atau https://mariflow.app).    │
+│  - Redirect URLs: Whitelist domain yang diizinkan menerima token (http://localhost:5173/**).           │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛡️ ATTACK PROTECTION:                                                                                  │
+│  - Enable Captcha Protection       : Integrasi Cloudflare Turnstile / hCaptcha untuk form login.       │
+│  - Prevent use of leaked passwords : Tolak pendaftaran kata sandi yang pernah bocor (HaveIBeenPwned).  │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 25.1 📱 Multi-Factor Authentication (MFA / 2FA)
+
+Supabase Auth mengimplementasikan standar **Authenticator Assurance Levels (AAL)** dari NIST:
+
+1. **`TOTP (App Authenticator)` (🟢 Aktif / Gratis di Free Tier)**:
+   - Menggunakan kode 6 digit berbasis waktu (*Time-based One-Time Password*) yang dibuat oleh aplikasi seperti **Google Authenticator**, **Microsoft Authenticator**, atau **1Password**.
+   - Di MariFlow, pengguna dapat mengaktifkan 2FA langsung dari menu pengaturan profil (`ProfileSettingsView.vue`) via SDK `supabase.auth.mfa.enroll({ factorType: 'totp' })`.
+2. **`SMS MFA` (🔒 Fitur Eksklusif PRO TIER)**:
+   - Mengirim kode OTP 6 digit melalui SMS. Memerlukan akun **Pro Plan ($25/bulan)** dan konfigurasi penyedia gateway SMS (Twilio).
+3. **`Enhanced MFA Security (Limit duration of AAL1 sessions)`**:
+   - `AAL1` (Level 1): Pengguna baru memasukkan email + password.
+   - `AAL2` (Level 2): Pengguna sukses memvalidasi kode TOTP 6 digit.
+   - **Opsi 15 Menit**: Jika pengguna telah mengaktifkan 2FA, sesi AAL1 otomatis dibatalkan jika pengguna tidak memasukkan kode TOTP dalam waktu 15 menit.
+
+---
+
+### 25.2 🌐 URL Configuration (Mencegah Serangan Open Redirect)
+
+Pengaturan **URL Configuration** adalah salah satu hal paling penting saat mendeploy aplikasi MariFlow ke produksi:
+
+1. **`Site URL`**:
+   - URL utama aplikasi Anda (misal: `http://localhost:5173` saat development, atau `https://app.mariflow.com` saat production).
+   - Menjadi tujuan akhir tautan email jika tidak ada parameter `redirectTo` spesifik.
+2. **`Redirect URLs (Allow List Whitelist)`**:
+   - **Penting**: Supabase menolak mengirim token login/reset password ke domain asing yang tidak terdaftar di daftar ini guna mencegah pencurian kredensial (*Open Redirect Vulnerability*).
+   - **Format yang Wajib Didaftarkan**:
+     ```text
+     http://localhost:5173/**
+     http://localhost:5173/reset-password
+     https://app.mariflow.com/**
+     https://app.mariflow.com/reset-password
+     ```
+
+---
+
+### 25.3 🛡️ Attack Protection (Bot Captcha & Leaked Passwords)
+
+1. **`Enable Captcha protection`**:
+   - Melindungi endpoint pendaftaran dan login dari serangan brute-force otomatis.
+   - Mendukung **Cloudflare Turnstile** (bebas verifikasi gambar membingungkan) dan **hCaptcha**.
+2. **`Prevent use of leaked passwords`**:
+   - Saat pengguna mendaftar atau mengganti kata sandi, Supabase secara otomatis memeriksa hash password ke database **Have I Been Pwned**.
+   - Jika kata sandi tersebut merupakan kata sandi umum yang pernah bocor di internet (misal: `password123`, `qwertyuiop`), pendaftaran akan langsung ditolak demi keamanan akun pengguna.
+
+---
+
+## 🪝 26. Bedah Lengkap Auth Hooks, Audit Logs, & Auth Performance Tuning
+
+Menu **Auth Hooks [BETA]**, **Audit Logs**, dan **Performance** (kelompok `CONFIGURATION`) memberikan kendali tingkat lanjut untuk memodifikasi alur otentikasi secara terprogram, mengaudit jejak keamanan pengguna, dan menyetel performa server otentikasi GoTrue.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🪝 AUTH HOOKS, AUDIT LOGS, & PERFORMANCE ARCHITECTURE                                                  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🪝 AUTH HOOKS (Trigger Eksekusi Alur Autentikasi):                                                     │
+│  ├─ 🟢 [Customize JWT Claims Hook] : Menyuntikkan 'role' / 'workspace_id' langsung ke JWT Token!       │
+│  ├─ 🟢 [Before User Created Hook]  : Validasi domain email (@perusahaan.com) sebelum akun dibuat.      │
+│  ├─ 🟢 [Send Email / SMS Hook]     : Forward pengiriman email/SMS ke Edge Function kustom.             │
+│  └─ 🔒 [MFA / Password Attempt]    : Memerlukan Team / Enterprise Plan.                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📜 AUDIT LOGS:                                                                                         │
+│  - Toggle: Write audit logs to database (Tabel 'audit_log_entries')                                    │
+│  - Catat setiap event sign-in, token refresh, password recovery, dan kegagalan login.                 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⚡ PERFORMANCE TUNING:                                                                                 │
+│  - 🔒 Eksklusif PRO TIER: Set Max Request Duration (10s) & Connection Pool Strategy (10 koneksi).      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 26.1 🪝 Auth Hooks [BETA] (Intersepsi Alur Otentikasi dengan Postgres & Edge Functions)
+
+Auth Hooks memungkinkan Anda mengeksekusi fungsi SQL Postgres atau HTTP Endpoint Edge Function pada tahap-tahap krusial proses otentikasi:
+
+#### 1. `Customize Access Token (JWT) Claims Hook` ⭐ (Fitur Paling Populer untuk SaaS)
+- **Fungsi**: Secara bawaan, token JWT Supabase hanya berisi `sub` (User ID) dan `email`.
+- **Manfaat**: Dengan hook ini, Anda dapat membuat Stored Procedure PostgreSQL yang secara otomatis menyuntikkan data tambahan (seperti `user_role: 'admin'`, `current_workspace_id: '...'`) langsung ke dalam payload JWT.
+- **Dampak Performa**: Query RLS di database menjadi jauh lebih cepat karena Postgres tidak perlu lagi melakukan query JOIN ke tabel `workspace_members` untuk mengetahui role pengguna—cukup baca dari `(auth.jwt()->>'user_role')`!
+
+#### 2. `Before User Created Hook` (Pre-Signup Gatekeeper)
+- **Fungsi**: Berjalan tepat sebelum data user baru disimpan ke `auth.users`.
+- **Skenario SaaS**: Memblokir pendaftaran akun jika domain email bukan domain korporat (misal: tolak email gratisan `@gmail.com` / `@yahoo.com` jika SaaS Anda khusus B2B).
+
+#### 3. `Send Email Hook` & `Send SMS Hook`
+- **Fungsi**: Meneruskan pengiriman email konfirmasi / SMS OTP ke provider kustom (misal: Mailgun API atau WhatsApp Gateway lokal Indonesia) menggunakan Supabase Edge Functions.
+
+#### 4. 🔒 Hooks Eksklusif Team/Enterprise:
+- `MFA Verification Attempt Hook` & `Password Verification Attempt Hook` (Mendeteksi dan memblokir upaya pembobolan OTP secara terprogram).
+
+---
+
+### 26.2 📜 Audit Logs (`audit_log_entries`)
+
+Menu **Audit Logs** mencatat seluruh rekaman aktivitas otentikasi di proyek MariFlow:
+
+1. **`Write audit logs to the database` (Toggle Sakelar)**:
+   - **🔘 Aktif**: Setiap kali ada pengguna login, refresh token, ganti email, atau gagal verifikasi password, rekaman event akan disimpan ke tabel internal **`auth.audit_log_entries`**.
+   - **⚪ Nonaktif (Rekomendasi Free Tier)**: Log tetap dapat dilihat di dashboard web, namun tidak memakan kapasitas kuota disk database 500 MB Free Tier Anda.
+
+---
+
+### 26.3 ⚡ Auth Performance Tuning (FREE Tier vs PRO Tier)
+
+> [!WARNING]
+> **Fitur Auth Performance Memerlukan PRO TIER 🔒**:
+> - Menu **Authentication ➔ Performance** menampilkan status *“Only available on the Pro Plan and above. Upgrade to the Pro Plan to configure Auth server performance settings.”*.
+> - **Parameter yang Disediakan di Pro Plan**:
+>   - `Maximum allowed duration for an Auth request` (Default 10 detik): Membatasi timeout request otentikasi untuk mencegah server hang akibat koneksi lambat.
+>   - `Connection management (Allocation strategy & Maximum connections)`: Mengatur alokasi jumlah pool koneksi Postgres khusus untuk engine GoTrue (misal: 10 dari 60 koneksi).
+> - **Kondisi di Free Tier**: Supabase telah mengatur alokasi performa default yang sangat optimal dan stabil untuk menangani ratusan pengguna harian MariFlow secara gratis.
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
+
 
 
 
