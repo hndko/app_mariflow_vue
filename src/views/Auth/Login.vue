@@ -50,6 +50,7 @@
           label="Alamat Email"
           type="email"
           placeholder="nama@perusahaan.com"
+          autocomplete="email"
           required
         >
           <template #prefix>
@@ -66,6 +67,7 @@
             label="Kata Sandi"
             :type="showPassword ? 'text' : 'password'"
             placeholder="Masukkan kata sandi akun Anda"
+            autocomplete="current-password"
             required
           >
             <template #prefix>

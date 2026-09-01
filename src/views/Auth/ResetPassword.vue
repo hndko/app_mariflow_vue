@@ -39,6 +39,7 @@
           label="Kata Sandi Baru"
           type="password"
           placeholder="Minimal 6 karakter"
+          autocomplete="new-password"
           required
         >
           <template #prefix>
@@ -54,6 +55,7 @@
           label="Konfirmasi Kata Sandi"
           type="password"
           placeholder="Ulangi kata sandi baru"
+          autocomplete="new-password"
           required
         >
           <template #prefix>

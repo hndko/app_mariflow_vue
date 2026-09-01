@@ -52,6 +52,7 @@
           label="Alamat Email"
           type="email"
           placeholder="nama@perusahaan.com"
+          autocomplete="email"
           required
         >
           <template #prefix>

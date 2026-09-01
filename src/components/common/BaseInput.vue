@@ -28,6 +28,7 @@
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
+        :autocomplete="autocomplete"
         :class="[
           'w-full rounded-lg border text-sm transition-colors duration-150 focus:outline-hidden',
           'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
@@ -77,6 +78,7 @@ interface BaseInputProps {
   placeholder?: string
   disabled?: boolean
   required?: boolean
+  autocomplete?: string
   error?: string
   hint?: string
   size?: 'sm' | 'md' | 'lg'
@@ -92,6 +94,7 @@ withDefaults(defineProps<BaseInputProps>(), {
   placeholder: '',
   disabled: false,
   required: false,
+  autocomplete: undefined,
   error: '',
   hint: '',
   size: 'md',

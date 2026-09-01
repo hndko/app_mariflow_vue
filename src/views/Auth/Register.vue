@@ -44,6 +44,7 @@
           v-model="fullName"
           label="Nama Lengkap"
           placeholder="contoh: Budi Santoso"
+          autocomplete="name"
           required
         >
           <template #prefix>
@@ -59,6 +60,7 @@
           label="Alamat Email"
           type="email"
           placeholder="nama@perusahaan.com"
+          autocomplete="email"
           required
         >
           <template #prefix>
@@ -74,6 +76,7 @@
           label="Kata Sandi (min. 6 karakter)"
           :type="showPassword ? 'text' : 'password'"
           placeholder="Buat kata sandi yang aman"
+          autocomplete="new-password"
           required
         >
           <template #prefix>
