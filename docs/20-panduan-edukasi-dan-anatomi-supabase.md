@@ -123,6 +123,11 @@ Dokumen ini disusun sebagai **materi pembelajaran mendalam (Masterclass Guide)**
 32. [Bedah Lengkap Security Advisor & Postgres Linter (Splinter Engine & RLS Auditing)](#-32-bedah-lengkap-security-advisor--postgres-linter-splinter-engine--rls-auditing)
     - [32.1 3 Kategori Temuan Splinter Linter](#321--3-kategori-temuan-splinter-linter)
     - [32.2 Bedah Kasus: Mengapa Muncul 2 Warnings pada public.rls_auto_enable()?](#322--bedah-kasus-mengapa-muncul-2-warnings-pada-publicrls_auto_enable)
+33. [Bedah Lengkap Supabase Integrations Marketplace (Data API, Vault, pg_cron, pgmq, & Observability)](#-33-bedah-lengkap-supabase-integrations-marketplace-data-api-vault-pg_cron-pgmq--observability)
+    - [33.1 Integrasi Bawaan (Installed Integrations)](#331--integrasi-bawaan-installed-integrations)
+    - [33.2 Fitur Komunitas Populer: pg_cron & pgmq](#332--fitur-komunitas-populer-pg_cron--pgmq)
+    - [33.3 Observability & Platform Deployment Sync](#333--observability--platform-deployment-sync)
+    - [33.4 Foreign Data Wrappers (FDW Integrations)](#334--foreign-data-wrappers-fdw-integrations)
 
 ---
 
@@ -2217,7 +2222,84 @@ Setelah query di atas dieksekusi, klik tombol **`Rerun linter`** di dashboard Se
 
 ---
 
+## 🧩🔌 33. Bedah Lengkap Supabase Integrations Marketplace (Data API, Vault, pg_cron, pgmq, & Observability)
+
+Menu **Integrations** (icon 🪟🧩 pada sidebar utama) adalah direktori marketplace ekosistem resmi dan pihak ketiga untuk memperluas kapabilitas database Supabase Anda (*Extend your database*).
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🧩🔌 SUPABASE INTEGRATIONS & PARTNER ECOSYSTEM ARCHITECTURE                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 📦 1. NATIVE EXTENSIONS & WRAPPERS (Tersedia Langsung di Database):                                    │
+│  ├─ [</> Data API]    : Engine PostgREST otomatis men-generate RESTful API dari skema tabel Postgres.  │
+│  ├─ [🔒 Vault]        : Enkripsi tingkat aplikasi (AES-GCM-256) untuk menyimpan data sensitif.         │
+│  ├─ [⏰ Cron (pg_cron)]: Penjadwal tugas otomatis langsung di dalam SQL PostgreSQL.                   │
+│  └─ [📨 Queues (pgmq)]: Antrean pesan ringan (Message Queue) tanpa perlu server Redis/RabbitMQ.        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🌐 2. THIRD-PARTY PARTNER INTEGRATIONS:                                                                │
+│  ├─ Observability   : Grafana Cloud, Datadog, Axiom (Metrik CPU, RAM, Slow Queries & Latency).         │
+│  ├─ Deployment Sync : Vercel Marketplace, Netlify, Cloudflare Workers (Auto-inject ENV Variables).     │
+│  └─ Foreign Wrappers: Airtable, ClickHouse, BigQuery, Firebase, Stripe (Query API luar via SQL).       │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛠️ 3. BUILD YOUR OWN INTEGRATIONS:                                                                    │
+│  - Supabase OAuth 2.0 Server & Management API untuk membangun aplikasi/plugin SaaS pihak ketiga.       │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 33.1 📦 Integrasi Bawaan (*Installed Integrations*)
+
+Di akun proyek MariFlow, terdapat 2 integrasi bawaan yang berstatus **`INSTALLED`**:
+
+1. **`</> Data API (PostgREST Engine)`**:
+   - Secara instan menghasilkan REST API dan GraphQL API otomatis langsung dari setiap tabel, view, dan fungsi PostgreSQL yang ada di skema `public`.
+   - Dilengkapi dokumentasi interaktif otomatis di menu **API Docs**.
+2. **`🔒 Vault (Application Level Encryption)`**:
+   - Modul enkripsi berbasis `pgsodium` / `pgcrypto` untuk mengenkripsi kolom database sensitif (seperti nomor rekening pembayaran, API keys, atau token rahasia pengguna) menggunakan standar enkripsi AES-GCM-256 tingkat militer.
+
+---
+
+### 33.2 ⏰ Fitur Komunitas Populer: `pg_cron` & `pgmq`
+
+1. **`⏰ Cron (pg_cron by Citus Data)`**:
+   - Memungkinkan Anda menjalankan query SQL secara otomatis pada interval waktu tertentu (mirip Linux Cron Job).
+   - **Contoh di MariFlow**: Membersihkan notifikasi yang sudah kedaluwarsa lebih dari 30 hari setiap tengah malam:
+     ```sql
+     SELECT cron.schedule('cleanup-old-notifications', '0 0 * * *', $$
+       DELETE FROM public.notifications WHERE created_at < NOW() - INTERVAL '30 days';
+     $$);
+     ```
+2. **`📨 Queues (pgmq)`**:
+   - Sistem antrean pesan (*Message Queue*) ringan di dalam Postgres.
+   - Menggantikan kebutuhan server Redis atau RabbitMQ terpisah untuk tugas-tugas antrean email atau background processing di MariFlow.
+
+---
+
+### 33.3 🌐 Observability & Platform Deployment Sync
+
+1. **Grafana Cloud Observability Platform (Partner)**:
+   - Menghubungkan metrik telemetri database PostgreSQL (penggunaan koneksi pool, I/O disk, cache hit ratio) ke dashboard Grafana secara real-time.
+2. **Vercel & Netlify Marketplace**:
+   - Saat Anda menghubungkan proyek Supabase ke repository Vercel, Supabase akan secara otomatis menginjeksi variabel `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` ke konfigurasi production Vercel tanpa perlu copy-paste manual.
+
+---
+
+### 33.4 🔌 Foreign Data Wrappers (FDW Integrations)
+
+Integrasi seperti **`Airtable Wrapper`**, **`Stripe Wrapper`**, dan **`ClickHouse Wrapper`** memungkinkan developer melakukan query SQL terhadap API eksternal seolah-olah API tersebut adalah tabel lokal PostgreSQL:
+
+```sql
+-- Query data customer langsung dari Stripe API menggunakan SQL murni!
+SELECT customer_id, email, subscription_status 
+FROM stripe.subscriptions 
+WHERE status = 'active';
+```
+
+---
+
 *MariFlow SaaS — Panduan Resmi Edukasi & Penguasaan Platform Supabase.*
+
 
 
 
