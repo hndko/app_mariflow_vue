@@ -346,7 +346,11 @@ Proyek MariFlow telah dilengkapi file [vercel.json](file:///d:/laragon/www/app_m
 - **Penyebab**: Bucket `avatars` atau `task-attachments` belum dibuat di menu Storage Supabase.
 - **Solusi**: Masuk ke menu **Storage** di Supabase dan buat bucket `avatars` dan `task-attachments` dengan status *Public*.
 
-### 4. Error: Halaman 404 saat me-refresh browser di halaman modul (Vercel/Netlify)
+### 4. Error: `Invalid login credentials` saat Login Akun Demo
+- **Penyebab**: Di Supabase, kata sandi disimpan di skema terenkripsi privat **`auth.users`** (bukan di `public.profiles`). Jika database baru saja di-reset, akun demo belum terbuat atau format enkripsi GoTrue belum terkonfirmasi.
+- **Solusi**: Jalankan script SQL aktivasi akun demo di SQL Editor atau jalankan `supabase/seeders/master_seed.sql` yang telah menyertakan password hash `crypt('password', gen_salt('bf', 10))` dan status konfirmasi email otomatis.
+
+### 5. Error: Halaman 404 saat me-refresh browser di halaman modul (Vercel/Netlify)
 - **Penyebab**: Web server mencoba mencari file fisik HTML yang sesuai dengan path rute (contoh: `/dashboard/index.html`).
 - **Solusi**: File [vercel.json](file:///d:/laragon/www/app_mariflow_vue/vercel.json) dan [public/_redirects](file:///d:/laragon/www/app_mariflow_vue/public/_redirects) telah disediakan di repository untuk mengarahkan seluruh permintaan rute ke `/index.html`.
 
