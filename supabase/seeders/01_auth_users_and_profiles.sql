@@ -150,13 +150,13 @@ SELECT
         ELSE 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150'
     END,
     email,
-    CASE 
+    (CASE 
         WHEN email = 'superadmin@example.com' THEN 'superadmin'
         WHEN email = 'owner@example.com' THEN 'owner'
         WHEN email = 'admin@example.com' THEN 'admin'
         WHEN email = 'member@example.com' THEN 'member'
         ELSE 'viewer'
-    END,
+    END)::public.user_role,
     NOW(),
     NOW()
 FROM auth.users
