@@ -1,124 +1,196 @@
 <template>
-  <div class="flex flex-col flex-1 lg:w-1/2 w-full justify-center">
-    <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto py-6">
-      <div class="mb-5 text-center sm:text-left">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white font-bold text-xl shadow-theme-xs">
-            M
+  <div class="w-full max-w-5xl mx-auto my-auto bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-800/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 transition-colors duration-200">
+    <!-- Left Card: Brand & Onboarding Showcase (2-Card Desktop / Stacks on Mobile) -->
+    <div class="lg:col-span-5 bg-gradient-to-br from-brand-50/70 via-brand-50/30 to-white dark:from-brand-950/30 dark:via-gray-900 dark:to-gray-900 p-6 sm:p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-gray-800">
+      <div>
+        <!-- Brand Logo & Version Badge -->
+        <div class="flex items-center justify-between mb-6 lg:mb-8">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white font-bold text-xl shadow-md shadow-brand-500/20">
+              M
+            </div>
+            <div>
+              <span class="text-xl font-bold tracking-tight text-gray-900 dark:text-white block leading-tight">MariFlow</span>
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Workspace & Task SaaS</span>
+            </div>
           </div>
-          <span class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">MariFlow</span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100/80 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+            v{{ APP_CONFIG.version }}
+          </span>
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-          Buat Akun Baru
-        </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Mulai kolaborasi tim Anda dalam hitungan detik.
-        </p>
+
+        <!-- Headline & Value Pitch -->
+        <div class="space-y-2 mb-6">
+          <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Mulai Bangun Alur Kerja Tim Anda Hari Ini
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            Daftar dalam hitungan detik dan dapatkan workspace instan lengkap dengan manajemen tugas Kanban realtime.
+          </p>
+        </div>
+
+        <!-- Benefits List (Anti-Slop Craft) -->
+        <div class="space-y-3.5 mb-6">
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-semibold text-gray-900 dark:text-gray-100">Workspace Otomatis</h4>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">Workspace default dan notifikasi sambutan dibuat instan.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-semibold text-gray-900 dark:text-gray-100">Keamanan PostgreSQL RLS</h4>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">Isolasi data antar tim terjamin di level database engine.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Registration Form -->
-      <form @submit.prevent="handleRegister" class="space-y-3.5">
-        <!-- Full Name Input -->
-        <BaseInput
-          v-model="fullName"
-          label="Nama Lengkap"
-          placeholder="contoh: Budi Santoso"
-          autocomplete="name"
-          required
-        >
-          <template #prefix>
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </template>
-        </BaseInput>
+      <!-- Trust Indicator -->
+      <div class="pt-4 border-t border-gray-200/60 dark:border-gray-800/80">
+        <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-success-500"></span>
+          Terintegrasi penuh dengan Supabase Cloud & GoTrue Auth.
+        </p>
+      </div>
+    </div>
 
-        <!-- Email Input -->
-        <BaseInput
-          v-model="email"
-          label="Alamat Email"
-          type="email"
-          placeholder="nama@perusahaan.com"
-          autocomplete="email"
-          required
-        >
-          <template #prefix>
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-            </svg>
-          </template>
-        </BaseInput>
-
-        <!-- Password Input -->
-        <BaseInput
-          v-model="password"
-          label="Kata Sandi (min. 6 karakter)"
-          :type="showPassword ? 'text' : 'password'"
-          placeholder="Buat kata sandi yang aman"
-          autocomplete="new-password"
-          required
-        >
-          <template #prefix>
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </template>
-          <template #suffix>
-            <button
-              type="button"
-              class="cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              @click="showPassword = !showPassword"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </button>
-          </template>
-        </BaseInput>
-
-        <!-- Terms and Conditions Checkbox -->
-        <div class="flex items-start gap-2 pt-1 text-xs text-gray-600 dark:text-gray-400">
-          <input
-            id="terms"
-            type="checkbox"
-            v-model="agreeTerms"
-            class="h-4 w-4 mt-0.5 rounded border-gray-300 text-brand-500 focus:ring-brand-400 dark:border-gray-700 dark:bg-gray-800"
-            required
-          />
-          <label for="terms" class="cursor-pointer">
-            Saya menyetujui <span class="text-brand-500 font-medium hover:underline">Syarat & Ketentuan</span> serta <span class="text-brand-500 font-medium hover:underline">Kebijakan Privasi</span> MariFlow.
-          </label>
+    <!-- Right Card: Form Register (Reflows cleanly on mobile) -->
+    <div class="lg:col-span-7 p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
+      <div class="w-full max-w-md mx-auto">
+        <!-- Form Header -->
+        <div class="mb-6 sm:mb-8 text-center sm:text-left">
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Buat Akun Baru
+          </h1>
+          <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+            Isi formulir berikut untuk memulai workspace pertama Anda.
+          </p>
         </div>
 
-        <!-- Submit Button (Icon + Text) -->
-        <div class="pt-2">
-          <BaseButton
-            type="submit"
-            variant="primary"
-            size="lg"
-            :loading="loading"
-            custom-class="w-full"
+        <!-- Registration Form -->
+        <form @submit.prevent="handleRegister" class="space-y-4 sm:space-y-4.5">
+          <!-- Full Name Input -->
+          <BaseInput
+            v-model="fullName"
+            label="Nama Lengkap"
+            placeholder="contoh: Budi Santoso"
+            autocomplete="name"
+            required
           >
-            <template #startIcon>
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            <template #prefix>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </template>
-            Daftar Akun Sekarang
-          </BaseButton>
-        </div>
-      </form>
+          </BaseInput>
 
-      <!-- Sign In Link -->
-      <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-        Sudah memiliki akun?
-        <router-link
-          to="/login"
-          class="font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 ml-1"
-        >
-          Masuk di Sini
-        </router-link>
+          <!-- Email Input -->
+          <BaseInput
+            v-model="email"
+            label="Alamat Email"
+            type="email"
+            placeholder="nama@perusahaan.com"
+            autocomplete="email"
+            required
+          >
+            <template #prefix>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            </template>
+          </BaseInput>
+
+          <!-- Password Input with Interactive Eye Toggle -->
+          <BaseInput
+            v-model="password"
+            label="Kata Sandi (min. 6 karakter)"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Buat kata sandi yang aman"
+            autocomplete="new-password"
+            required
+          >
+            <template #prefix>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </template>
+            <template #suffix>
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                :title="showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+                :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+              >
+                <!-- Eye Open -->
+                <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <!-- Eye Slash -->
+                <svg v-else class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              </button>
+            </template>
+          </BaseInput>
+
+          <!-- Terms and Conditions Checkbox -->
+          <div class="flex items-start gap-2.5 pt-1 text-xs text-gray-600 dark:text-gray-400">
+            <input
+              id="terms"
+              type="checkbox"
+              v-model="agreeTerms"
+              class="h-4 w-4 mt-0.5 rounded border-gray-300 text-brand-500 focus:ring-brand-400 dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+              required
+            />
+            <label for="terms" class="cursor-pointer leading-relaxed select-none">
+              Saya menyetujui <span class="text-brand-500 font-medium hover:underline">Syarat & Ketentuan</span> serta <span class="text-brand-500 font-medium hover:underline">Kebijakan Privasi</span> MariFlow.
+            </label>
+          </div>
+
+          <!-- Submit Button (Icon + Text) -->
+          <div class="pt-2">
+            <BaseButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              :loading="loading"
+              custom-class="w-full justify-center shadow-md shadow-brand-500/20"
+            >
+              <template #startIcon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </template>
+              Daftar Akun Sekarang
+            </BaseButton>
+          </div>
+        </form>
+
+        <!-- Sign In Link -->
+        <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          Sudah memiliki akun?
+          <router-link
+            to="/login"
+            class="font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 ml-1 transition-colors"
+          >
+            Masuk di Sini
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -129,6 +201,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/composables/useAlert'
+import { APP_CONFIG } from '@/config/app'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
@@ -141,31 +214,34 @@ const password = ref('')
 const agreeTerms = ref(false)
 const showPassword = ref(false)
 const loading = ref(false)
-const errorMessage = ref('')
 
 const handleRegister = async () => {
-  if (!agreeTerms.value) {
-    errorMessage.value = 'Anda harus menyetujui Syarat & Ketentuan terlebih dahulu.'
-    showToast.warning(errorMessage.value)
+  if (!fullName.value.trim() || !email.value.trim() || !password.value) {
+    showToast.warning('Mohon lengkapi nama lengkap, email, dan kata sandi.')
     return
   }
+
+  if (!agreeTerms.value) {
+    showToast.warning('Anda harus menyetujui Syarat & Ketentuan terlebih dahulu.')
+    return
+  }
+
   if (password.value.length < 6) {
-    errorMessage.value = 'Kata sandi minimal 6 karakter.'
-    showToast.warning(errorMessage.value)
+    showToast.warning('Kata sandi harus minimal 6 karakter demi keamanan akun.')
     return
   }
 
   loading.value = true
-  errorMessage.value = ''
   try {
-    await authStore.register(email.value, password.value, fullName.value)
+    await authStore.register(email.value.trim(), password.value, fullName.value.trim())
     showToast.success('Pendaftaran akun berhasil! Selamat datang di MariFlow.')
     router.push('/dashboard')
   } catch (err: any) {
-    errorMessage.value = err.message || 'Gagal mendaftar. Silakan coba kembali.'
-    showToast.error(errorMessage.value)
+    const msg = err.message || 'Gagal mendaftar akun. Silakan coba kembali.'
+    showToast.error(msg)
   } finally {
     loading.value = false
   }
 }
 </script>
+
