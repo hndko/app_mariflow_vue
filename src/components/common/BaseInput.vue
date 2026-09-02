@@ -49,10 +49,10 @@
       <!-- Suffix Icon Slot / Prop -->
       <div
         v-if="$slots.suffix || suffixIcon"
-        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400"
+        class="absolute inset-y-0 right-0 flex items-center pr-3 z-10 text-gray-400"
       >
         <slot name="suffix">
-          <component :is="suffixIcon" class="w-5 h-5" />
+          <component :is="suffixIcon" class="w-5 h-5 pointer-events-none" />
         </slot>
       </div>
     </div>

@@ -159,8 +159,25 @@ export function getCustomErrorMessage(
     return 'Waktu permintaan habis (timeout). Silakan periksa jaringan internet Anda dan coba lagi.'
   }
 
-  // 5. If message is already clean Indonesian text, preserve it
-  if (rawMessage && !rawMessage.includes('{') && !rawMessage.includes('at ') && !rawMessage.includes('PostgresError')) {
+  // 5. JSON / HTML Response Parsing & Server Syntax Errors
+  if (
+    fullErrorStr.includes('unexpected token') ||
+    fullErrorStr.includes('not valid json') ||
+    fullErrorStr.includes('doctype') ||
+    fullErrorStr.includes('syntaxerror')
+  ) {
+    return 'Gagal terhubung ke server Supabase. Pastikan konfigurasi URL dan API Key pada file .env sudah tepat.'
+  }
+
+  // 6. If message is already clean Indonesian text, preserve it
+  if (
+    rawMessage &&
+    !rawMessage.includes('{') &&
+    !rawMessage.includes('at ') &&
+    !rawMessage.includes('PostgresError') &&
+    !rawMessage.includes('<!DOCTYPE') &&
+    !rawMessage.includes('SyntaxError')
+  ) {
     return rawMessage
   }
 

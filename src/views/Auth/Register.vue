@@ -16,15 +16,6 @@
         </p>
       </div>
 
-      <!-- Error / Success Alert -->
-      <div
-        v-if="errorMessage"
-        class="mb-4 p-4 rounded-xl bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-800 text-sm text-error-700 dark:text-error-400 flex items-center justify-between"
-      >
-        <span>{{ errorMessage }}</span>
-        <button type="button" @click="errorMessage = ''" class="text-error-500 font-bold">×</button>
-      </div>
-
       <!-- Registration Form -->
       <form @submit.prevent="handleRegister" class="space-y-3.5">
         <!-- Full Name Input -->

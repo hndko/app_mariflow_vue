@@ -16,22 +16,6 @@
         </p>
       </div>
 
-      <!-- Alerts -->
-      <div
-        v-if="errorMessage"
-        class="mb-5 p-4 rounded-xl bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-800 text-sm text-error-700 dark:text-error-400 flex items-center justify-between"
-      >
-        <span>{{ errorMessage }}</span>
-        <button type="button" @click="errorMessage = ''" class="text-error-500 font-bold">×</button>
-      </div>
-
-      <div
-        v-if="success"
-        class="mb-5 p-4 rounded-xl bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-800 text-sm text-success-700 dark:text-success-400"
-      >
-        Kata sandi Anda berhasil diperbarui! Mengalihkan ke halaman login...
-      </div>
-
       <form v-if="!success" @submit.prevent="handleUpdatePassword" class="space-y-4">
         <!-- New Password Input -->
         <BaseInput

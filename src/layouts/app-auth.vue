@@ -1,8 +1,6 @@
 <template>
-  <div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0 min-h-screen flex items-center justify-center">
-    <div
-      class="relative flex lg:flex-row w-full h-screen justify-center flex-col dark:bg-gray-900 sm:p-0"
-    >
+  <div class="min-h-screen w-full flex items-center justify-center bg-gray-50/80 dark:bg-gray-950 p-4 sm:p-6 lg:p-8 transition-colors duration-200">
+    <div class="w-full flex items-center justify-center">
       <slot></slot>
     </div>
   </div>
