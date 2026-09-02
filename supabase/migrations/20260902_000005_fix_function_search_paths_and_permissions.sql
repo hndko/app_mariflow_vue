@@ -28,9 +28,13 @@ DECLARE
 BEGIN
     user_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
     
+    -- 1. Insert profile
     INSERT INTO public.profiles (id, full_name, avatar_url, email)
-    VALUES (NEW.id, user_name, NULL, NEW.email);
+    VALUES (NEW.id, user_name, NULL, NEW.email)
+    ON CONFLICT (id) DO UPDATE 
+    SET full_name = EXCLUDED.full_name, email = EXCLUDED.email;
 
+    -- 2. Create default personal workspace
     INSERT INTO public.workspaces (name, slug, description, owner_id)
     VALUES (
         user_name || '''s Workspace',
@@ -40,9 +44,12 @@ BEGIN
     )
     RETURNING id INTO new_workspace_id;
 
+    -- 3. Add user as workspace Owner
     INSERT INTO public.workspace_members (workspace_id, user_id, role)
-    VALUES (new_workspace_id, NEW.id, 'owner');
+    VALUES (new_workspace_id, NEW.id, 'owner')
+    ON CONFLICT DO NOTHING;
 
+    -- 4. Create welcome notification
     INSERT INTO public.notifications (user_id, workspace_id, type, title, message)
     VALUES (
         NEW.id,
@@ -53,11 +60,18 @@ BEGIN
     );
 
     RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'handle_new_user encountered error: %', SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, pg_temp;
+SET search_path = public, auth, pg_temp;
 
-REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, supabase_auth_admin;
 
 -- 3. FIX: log_task_activity (Internal Trigger Function on public.tasks)
 CREATE OR REPLACE FUNCTION public.log_task_activity()

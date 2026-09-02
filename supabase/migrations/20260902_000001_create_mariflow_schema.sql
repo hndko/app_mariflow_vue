@@ -178,11 +178,13 @@ DECLARE
 BEGIN
     user_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
     
-    -- Insert profile
+    -- 1. Insert profile
     INSERT INTO public.profiles (id, full_name, avatar_url, email)
-    VALUES (NEW.id, user_name, NULL, NEW.email);
+    VALUES (NEW.id, user_name, NULL, NEW.email)
+    ON CONFLICT (id) DO UPDATE 
+    SET full_name = EXCLUDED.full_name, email = EXCLUDED.email;
 
-    -- Create default personal workspace
+    -- 2. Create default personal workspace
     INSERT INTO public.workspaces (name, slug, description, owner_id)
     VALUES (
         user_name || '''s Workspace',
@@ -192,11 +194,12 @@ BEGIN
     )
     RETURNING id INTO new_workspace_id;
 
-    -- Add user as workspace Owner
+    -- 3. Add user as workspace Owner
     INSERT INTO public.workspace_members (workspace_id, user_id, role)
-    VALUES (new_workspace_id, NEW.id, 'owner'::workspace_role);
+    VALUES (new_workspace_id, NEW.id, 'owner'::workspace_role)
+    ON CONFLICT DO NOTHING;
 
-    -- Create welcome notification
+    -- 4. Create welcome notification
     INSERT INTO public.notifications (user_id, workspace_id, type, title, message)
     VALUES (
         NEW.id,
@@ -207,11 +210,18 @@ BEGIN
     );
 
     RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'handle_new_user encountered error: %', SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, pg_temp;
+SET search_path = public, auth, pg_temp;
 
-REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, supabase_auth_admin;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

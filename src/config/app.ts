@@ -9,7 +9,7 @@
 export const APP_CONFIG = {
   name: 'MariFlow',
   brand: 'Mari Partner',
-  version: '1.0.3',
+  version: '1.0.4',
   tagline: 'Simple Workspace & Task Management',
   releaseName: 'Titanium Flow',
   buildDate: '2026-09-02',
