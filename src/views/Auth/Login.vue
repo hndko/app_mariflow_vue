@@ -16,7 +16,7 @@
           </div>
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100/80 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400">
             <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-            v1.0 Ready
+            v{{ APP_CONFIG.version }}
           </span>
         </div>
 
@@ -206,6 +206,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/composables/useAlert'
+import { APP_CONFIG } from '@/config/app'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 

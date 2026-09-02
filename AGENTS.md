@@ -128,9 +128,10 @@ Struktur direktori wajib terorganisir secara modular dan simetris:
 Sebelum dan sesudah menulis kode pada setiap milestone:
 1. **Analisis Task**: Periksa requirement dan sebutkan daftar file yang akan dibuat/diubah.
 2. **Implementasi Kode**: Tulis kode bersih (*Clean Code*), modular, dan sesuai standar UI/UX.
-3. **Verifikasi**: Jalankan verifikasi build/linter/runtime (`npm run build`).
-4. **Dokumentasikan**: Buat file dokumentasi teknis di folder `docs/` sesuai format standar PRD.
-5. **Otomatis Commit & Push**: Lakukan commit otomatis menggunakan format **Semantic Commit Messages** lalu push ke repository.
+3. **Naikkan Versi Aplikasi (SemVer)**: Perbarui versi pada `package.json` dan `src/config/app.ts` sesuai kategori perubahan.
+4. **Verifikasi**: Jalankan verifikasi build/linter/runtime (`npm run build`).
+5. **Dokumentasikan**: Buat file dokumentasi teknis di folder `docs/` sesuai format standar PRD jika relevan.
+6. **Otomatis Commit & Push**: Lakukan commit otomatis menggunakan format **Semantic Commit Messages** lalu push ke repository.
 
 ---
 
@@ -160,3 +161,31 @@ Setiap commit **wajib** menggunakan format baku:
 3. **Jangan beri tanda titik (`.`)** di akhir pesan commit.
 4. **Gunakan `<scope>` (opsional)** di dalam tanda kurung untuk menentukan modul/bagian kode yang berubah (contoh: `auth`, `workspace`, `tasks`, `kanban`, `ui`).
 5. **Setiap pekerjaan selesai**, lakukan otomatis `git add`, `git commit`, dan `git push`.
+
+---
+
+## 🏷️ 9. Aturan Pemversian Semantik (Semantic Versioning / SemVer 2.0.0)
+
+Format penomoran versi aplikasi MariFlow ditulis dalam format baku:
+
+```text
+MAJOR.MINOR.PATCH (contoh: 1.0.2)
+```
+
+### 9.1 Aturan Kenaikan Angka Versi
+1. **MAJOR (Utama)**:
+   - Naikkan angka pertama jika membuat perubahan besar pada arsitektur, API publik, atau skema database yang tidak lagi kompatibel dengan versi sebelumnya (*breaking changes*).
+   - Contoh: `1.4.2` ➔ `2.0.0`.
+2. **MINOR (Menengah)**:
+   - Naikkan angka kedua jika menambahkan fitur baru atau modul baru yang tetap kompatibel secara ke belakang (*backward-compatible*).
+   - Contoh: `1.0.2` ➔ `1.1.0`.
+3. **PATCH (Tambahan)**:
+   - Naikkan angka ketiga jika melakukan perbaikan bug (*bug fix*), optimasi performa ringan, perbaikan UI/UX kecil, atau refactor yang tetap kompatibel secara ke belakang.
+   - Contoh: `1.0.1` ➔ `1.0.2`.
+
+### 9.2 Lokasi Sinkronisasi & Penampilan Versi
+- **Konfigurasi Sumber**: `package.json` (`"version": "X.Y.Z"`) dan [`src/config/app.ts`](file:///d:/laragon/www/app_mariflow_vue/src/config/app.ts) (`APP_CONFIG.version`).
+- **Penampilan UI Wajib**:
+  - **Sidebar Footer / Widget**: Menampilkan badge versi `vX.Y.Z` secara dinamis.
+  - **Halaman Login**: Menampilkan badge `vX.Y.Z` pada header branding.
+  - **Dokumentasi & Release Log**: Menyertakan nomor versi pada catatan rilis.
