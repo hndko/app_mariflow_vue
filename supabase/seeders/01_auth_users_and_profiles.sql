@@ -130,27 +130,27 @@ BEGIN
         id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
     ) VALUES
     (
-        superadmin_uid::text, superadmin_uid,
+        superadmin_uid, superadmin_uid,
         jsonb_build_object('sub', superadmin_uid::text, 'email', 'superadmin@example.com'),
         'email', 'superadmin@example.com', NOW(), NOW(), NOW()
     ),
     (
-        owner_uid::text, owner_uid,
+        owner_uid, owner_uid,
         jsonb_build_object('sub', owner_uid::text, 'email', 'owner@example.com'),
         'email', 'owner@example.com', NOW(), NOW(), NOW()
     ),
     (
-        admin_uid::text, admin_uid,
+        admin_uid, admin_uid,
         jsonb_build_object('sub', admin_uid::text, 'email', 'admin@example.com'),
         'email', 'admin@example.com', NOW(), NOW(), NOW()
     ),
     (
-        member_uid::text, member_uid,
+        member_uid, member_uid,
         jsonb_build_object('sub', member_uid::text, 'email', 'member@example.com'),
         'email', 'member@example.com', NOW(), NOW(), NOW()
     ),
     (
-        viewer_uid::text, viewer_uid,
+        viewer_uid, viewer_uid,
         jsonb_build_object('sub', viewer_uid::text, 'email', 'viewer@example.com'),
         'email', 'viewer@example.com', NOW(), NOW(), NOW()
     )
