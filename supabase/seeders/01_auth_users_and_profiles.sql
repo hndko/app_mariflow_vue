@@ -16,104 +16,148 @@ DECLARE
     viewer_uid     UUID := '00000000-0000-0000-0000-000000000005'::UUID;
 BEGIN
     -- Superadmin User (Password: password)
-    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'superadmin@example.com') THEN
-        INSERT INTO auth.users (
-            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-            superadmin_uid,
-            '00000000-0000-0000-0000-000000000000',
-            'authenticated',
-            'authenticated',
-            'superadmin@example.com',
-            crypt('password', gen_salt('bf')),
-            NOW(),
-            '{"provider":"email","providers":["email"]}',
-            '{"full_name":"Super Administrator"}',
-            NOW(),
-            NOW()
-        );
-    END IF;
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        is_super_admin, is_sso_user
+    ) VALUES (
+        superadmin_uid,
+        '00000000-0000-0000-0000-000000000000',
+        'authenticated',
+        'authenticated',
+        'superadmin@example.com',
+        crypt('password', gen_salt('bf', 10)),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"full_name":"Super Administrator"}'::jsonb,
+        NOW(), NOW(), '', '', '', '', false, false
+    ) ON CONFLICT (id) DO UPDATE SET
+        encrypted_password = crypt('password', gen_salt('bf', 10)),
+        email_confirmed_at = NOW(),
+        updated_at = NOW();
 
     -- Owner User (Password: password)
-    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'owner@example.com') THEN
-        INSERT INTO auth.users (
-            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-            owner_uid,
-            '00000000-0000-0000-0000-000000000000',
-            'authenticated',
-            'authenticated',
-            'owner@example.com',
-            crypt('password', gen_salt('bf')),
-            NOW(),
-            '{"provider":"email","providers":["email"]}',
-            '{"full_name":"Budi Santoso (Owner)"}',
-            NOW(),
-            NOW()
-        );
-    END IF;
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        is_super_admin, is_sso_user
+    ) VALUES (
+        owner_uid,
+        '00000000-0000-0000-0000-000000000000',
+        'authenticated',
+        'authenticated',
+        'owner@example.com',
+        crypt('password', gen_salt('bf', 10)),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"full_name":"Budi Santoso (Owner)"}'::jsonb,
+        NOW(), NOW(), '', '', '', '', false, false
+    ) ON CONFLICT (id) DO UPDATE SET
+        encrypted_password = crypt('password', gen_salt('bf', 10)),
+        email_confirmed_at = NOW(),
+        updated_at = NOW();
 
     -- Admin User (Password: password)
-    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@example.com') THEN
-        INSERT INTO auth.users (
-            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-            admin_uid,
-            '00000000-0000-0000-0000-000000000000',
-            'authenticated',
-            'authenticated',
-            'admin@example.com',
-            crypt('password', gen_salt('bf')),
-            NOW(),
-            '{"provider":"email","providers":["email"]}',
-            '{"full_name":"Siti Rahma (Admin)"}',
-            NOW(),
-            NOW()
-        );
-    END IF;
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        is_super_admin, is_sso_user
+    ) VALUES (
+        admin_uid,
+        '00000000-0000-0000-0000-000000000000',
+        'authenticated',
+        'authenticated',
+        'admin@example.com',
+        crypt('password', gen_salt('bf', 10)),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"full_name":"Siti Rahma (Admin)"}'::jsonb,
+        NOW(), NOW(), '', '', '', '', false, false
+    ) ON CONFLICT (id) DO UPDATE SET
+        encrypted_password = crypt('password', gen_salt('bf', 10)),
+        email_confirmed_at = NOW(),
+        updated_at = NOW();
 
     -- Member User (Password: password)
-    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'member@example.com') THEN
-        INSERT INTO auth.users (
-            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-            member_uid,
-            '00000000-0000-0000-0000-000000000000',
-            'authenticated',
-            'authenticated',
-            'member@example.com',
-            crypt('password', gen_salt('bf')),
-            NOW(),
-            '{"provider":"email","providers":["email"]}',
-            '{"full_name":"Rian Pratama (Member)"}',
-            NOW(),
-            NOW()
-        );
-    END IF;
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        is_super_admin, is_sso_user
+    ) VALUES (
+        member_uid,
+        '00000000-0000-0000-0000-000000000000',
+        'authenticated',
+        'authenticated',
+        'member@example.com',
+        crypt('password', gen_salt('bf', 10)),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"full_name":"Rian Pratama (Member)"}'::jsonb,
+        NOW(), NOW(), '', '', '', '', false, false
+    ) ON CONFLICT (id) DO UPDATE SET
+        encrypted_password = crypt('password', gen_salt('bf', 10)),
+        email_confirmed_at = NOW(),
+        updated_at = NOW();
 
     -- Viewer User (Password: password)
-    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'viewer@example.com') THEN
-        INSERT INTO auth.users (
-            id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-            viewer_uid,
-            '00000000-0000-0000-0000-000000000000',
-            'authenticated',
-            'authenticated',
-            'viewer@example.com',
-            crypt('password', gen_salt('bf')),
-            NOW(),
-            '{"provider":"email","providers":["email"]}',
-            '{"full_name":"Maya Indah (Viewer)"}',
-            NOW(),
-            NOW()
-        );
-    END IF;
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        is_super_admin, is_sso_user
+    ) VALUES (
+        viewer_uid,
+        '00000000-0000-0000-0000-000000000000',
+        'authenticated',
+        'authenticated',
+        'viewer@example.com',
+        crypt('password', gen_salt('bf', 10)),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"full_name":"Maya Indah (Viewer)"}'::jsonb,
+        NOW(), NOW(), '', '', '', '', false, false
+    ) ON CONFLICT (id) DO UPDATE SET
+        encrypted_password = crypt('password', gen_salt('bf', 10)),
+        email_confirmed_at = NOW(),
+        updated_at = NOW();
+
+    -- SINKRONISASIKAN auth.identities (Wajib untuk GoTrue Supabase Cloud Login)
+    INSERT INTO auth.identities (
+        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+    ) VALUES
+    (
+        superadmin_uid::text, superadmin_uid,
+        jsonb_build_object('sub', superadmin_uid::text, 'email', 'superadmin@example.com'),
+        'email', 'superadmin@example.com', NOW(), NOW(), NOW()
+    ),
+    (
+        owner_uid::text, owner_uid,
+        jsonb_build_object('sub', owner_uid::text, 'email', 'owner@example.com'),
+        'email', 'owner@example.com', NOW(), NOW(), NOW()
+    ),
+    (
+        admin_uid::text, admin_uid,
+        jsonb_build_object('sub', admin_uid::text, 'email', 'admin@example.com'),
+        'email', 'admin@example.com', NOW(), NOW(), NOW()
+    ),
+    (
+        member_uid::text, member_uid,
+        jsonb_build_object('sub', member_uid::text, 'email', 'member@example.com'),
+        'email', 'member@example.com', NOW(), NOW(), NOW()
+    ),
+    (
+        viewer_uid::text, viewer_uid,
+        jsonb_build_object('sub', viewer_uid::text, 'email', 'viewer@example.com'),
+        'email', 'viewer@example.com', NOW(), NOW(), NOW()
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        identity_data = EXCLUDED.identity_data,
+        last_sign_in_at = NOW(),
+        updated_at = NOW();
 END $$;
 
 -- 2.5 Pastikan ENUM user_role dan kolom role ada di profiles
