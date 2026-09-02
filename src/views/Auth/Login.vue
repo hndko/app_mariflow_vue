@@ -47,8 +47,8 @@
               <div class="min-w-0 flex-1">
                 <p class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">Implementasi Realtime Supabase</p>
                 <div class="flex items-center gap-2 mt-1">
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-medium">In Progress</span>
-                  <span class="text-[10px] text-gray-400">85% Selesai</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">Completed</span>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">100% Selesai</span>
                 </div>
               </div>
               <div class="flex -space-x-1.5 ml-2">
